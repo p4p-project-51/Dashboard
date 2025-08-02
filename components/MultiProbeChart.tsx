@@ -369,19 +369,14 @@ export default function MultiProbeChart() {
         />
       </div>
       <Paper
-        mb={24}
-        w="100%"
-        radius={8}
-        shadow="xs"
-        p={8}
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          overflowX: "auto",
-          background: "#fff",
-        }}
+        shadow="sm"
+        p="xl"
       >
-        <LoadingOverlay visible={loading} zIndex={1000} />
+        <LoadingOverlay
+          visible={loading}
+          zIndex={1000}
+          overlayProps={{ radius: "sm", blur: 2 }}
+        />
         <UplotReact
           options={tempOpts}
           data={tempChartData}
@@ -391,7 +386,7 @@ export default function MultiProbeChart() {
         />
       </Paper>
       <Paper
-        mb={8}
+        mb={24}
         w="100%"
         radius={8}
         shadow="xs"
@@ -402,7 +397,6 @@ export default function MultiProbeChart() {
           alignItems: "center",
           justifyContent: "center",
           overflowX: "auto",
-          background: "#fff",
         }}
       >
         <div
@@ -438,16 +432,6 @@ export default function MultiProbeChart() {
             ]}
             size="lg"
             radius="md"
-            color="dark"
-            styles={{
-              track: { backgroundColor: "#000", height: 12 },
-              bar: { backgroundColor: "#000", height: 12 },
-              thumb: {
-                borderColor: "#000",
-                backgroundColor: "#fff",
-              },
-              mark: { color: "#000", marginTop: 5 },
-            }}
           />
         </div>
         <div
@@ -472,19 +456,14 @@ export default function MultiProbeChart() {
         </div>
       </Paper>
       <Paper
-        mb={24}
-        w="100%"
-        radius={8}
-        shadow="xs"
-        p={8}
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          overflowX: "auto",
-          background: "#fff",
-        }}
+        shadow="sm"
+        p="xl"
       >
-        <LoadingOverlay visible={loading} zIndex={1000} />
+        <LoadingOverlay
+          visible={loading}
+          zIndex={1000}
+          overlayProps={{ radius: "sm", blur: 2 }}
+        />
         <UplotReact
           options={metricsOpts}
           data={metricsChartData}
