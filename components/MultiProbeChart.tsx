@@ -368,10 +368,7 @@ export default function MultiProbeChart() {
           }}
         />
       </div>
-      <Paper
-        shadow="sm"
-        p="xl"
-      >
+      <Paper shadow="sm" p="xl" style={{ position: "relative" }}>
         <LoadingOverlay
           visible={loading}
           zIndex={1000}
@@ -397,6 +394,7 @@ export default function MultiProbeChart() {
           alignItems: "center",
           justifyContent: "center",
           overflowX: "auto",
+          position: "relative",
         }}
       >
         <div
@@ -455,10 +453,7 @@ export default function MultiProbeChart() {
           </Button>
         </div>
       </Paper>
-      <Paper
-        shadow="sm"
-        p="xl"
-      >
+      <Paper shadow="sm" p="xl" style={{ position: "relative" }}>
         <LoadingOverlay
           visible={loading}
           zIndex={1000}
