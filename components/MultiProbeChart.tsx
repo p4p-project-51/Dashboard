@@ -52,31 +52,19 @@ export default function MultiProbeChart() {
   }, [selectedSession]);
 
   // Prepare chart data
-  const x = useMemo(
-    () => Float64Array.from(data.map((d) => d.timestamp)),
-    [data]
-  );
+  const x = useMemo(() => data.map((d) => d.timestamp), [data]);
   const tempSeries = useMemo(
     () =>
       Array.from({ length: 12 }, (_, i) =>
-        Float64Array.from(data.map((d) => d.temperatures[i] ?? NaN))
+        data.map((d) => d.temperatures[i] ?? NaN)
       ),
     [data]
   );
-  const pumpVoltage = useMemo(
-    () => Float64Array.from(data.map((d) => d.pumpVoltage)),
-    [data]
-  );
-  const pumpCurrent = useMemo(
-    () => Float64Array.from(data.map((d) => d.pumpCurrent)),
-    [data]
-  );
-  const pumpPower = useMemo(
-    () => Float64Array.from(data.map((d) => d.pumpPower)),
-    [data]
-  );
+  const pumpVoltage = useMemo(() => data.map((d) => d.pumpVoltage), [data]);
+  const pumpCurrent = useMemo(() => data.map((d) => d.pumpCurrent), [data]);
+  const pumpPower = useMemo(() => data.map((d) => d.pumpPower), [data]);
   const flowSensorCurrent = useMemo(
-    () => Float64Array.from(data.map((d) => d.flowSensorCurrent)),
+    () => data.map((d) => d.flowSensorCurrent),
     [data]
   );
 
