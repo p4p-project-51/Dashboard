@@ -7,6 +7,7 @@ import styles from "./MultiProbeChart.module.css";
 import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
 import { IconZoom } from "@tabler/icons-react";
+import { Select, LoadingOverlay, Box } from "@mantine/core";
 
 export type ProbeData = {
   timestamp: number;
@@ -21,6 +22,7 @@ export default function MultiProbeChart() {
   const [data, setData] = useState<ProbeData[]>([]);
   const [sessions, setSessions] = useState<string[]>([]);
   const [selectedSession, setSelectedSession] = useState<string>("");
+  const [loading, setLoading] = useState(false);
   const chartWidth = 900;
 
   useEffect(() => {
@@ -35,9 +37,14 @@ export default function MultiProbeChart() {
 
   useEffect(() => {
     if (!selectedSession) return;
+    setLoading(true);
     fetch(`/api/probe-data/${encodeURIComponent(selectedSession)}`)
       .then((res) => res.json())
-      .then(setData);
+      .then((newData) => {
+        setData(newData);
+        setZoom(null); // Reset zoom only after new data is loaded
+        setLoading(false);
+      });
   }, [selectedSession]);
 
   // Prepare chart data
@@ -340,35 +347,20 @@ export default function MultiProbeChart() {
   return (
     <div className={styles.chartContainer}>
       <div style={{ marginBottom: 16 }}>
-        <label
-          htmlFor="session-select"
-          style={{
-            fontWeight: 600,
-            fontSize: 14,
-            marginRight: 8,
-          }}
-        >
-          Session:
-        </label>
-        <select
-          id="session-select"
+        <Select
+          label="Session"
+          placeholder="Select session"
+          data={sessions.map((sessionId) => ({ value: sessionId, label: sessionId }))}
           value={selectedSession}
-          onChange={(e) => setSelectedSession(e.target.value)}
-          style={{
-            fontSize: 14,
-            padding: "4px 8px",
-            borderRadius: 4,
-            border: "1px solid #ccc",
+          onChange={(value) => setSelectedSession(value || "")}
+          styles={{
+            label: { fontWeight: 600, fontSize: 14 },
+            input: { fontSize: 14, borderRadius: 4 },
           }}
-        >
-          {sessions.map((sessionId) => (
-            <option key={sessionId} value={sessionId}>
-              {sessionId}
-            </option>
-          ))}
-        </select>
+        />
       </div>
-      <div
+      <Box
+        pos="relative"
         style={{
           marginBottom: 24,
           width: "100%",
@@ -381,6 +373,11 @@ export default function MultiProbeChart() {
           padding: 8,
         }}
       >
+        <LoadingOverlay
+          visible={loading}
+          zIndex={1000}
+          overlayProps={{ radius: "sm", blur: 2 }}
+        />
         <UplotReact
           options={tempOpts}
           data={tempChartData}
@@ -388,7 +385,7 @@ export default function MultiProbeChart() {
             tempPlotRef.current = chart;
           }}
         />
-      </div>
+      </Box>
       <div
         style={{
           marginBottom: 8,
@@ -516,7 +513,8 @@ export default function MultiProbeChart() {
           </div>
         </div>
       </div>
-      <div
+      <Box
+        pos="relative"
         style={{
           marginBottom: 24,
           width: "100%",
@@ -529,6 +527,11 @@ export default function MultiProbeChart() {
           padding: 8,
         }}
       >
+        <LoadingOverlay
+          visible={loading}
+          zIndex={1000}
+          overlayProps={{ radius: "sm", blur: 2 }}
+        />
         <UplotReact
           options={metricsOpts}
           data={metricsChartData}
@@ -536,7 +539,7 @@ export default function MultiProbeChart() {
             metricsPlotRef.current = chart;
           }}
         />
-      </div>
+      </Box>
     </div>
   );
 }
