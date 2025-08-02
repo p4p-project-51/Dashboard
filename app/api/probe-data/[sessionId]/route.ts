@@ -37,9 +37,8 @@ export async function GET(
     return seededRandom() * (max - min) + min;
   }
 
-  const now = Math.floor(Date.now() / 1000);
   const data = Array.from({ length: 100 }, (_, i) => {
-    const timestamp = now - 100 + i;
+    const timestamp = i * 1000; // ms from zero
     const entry = {
       timestamp,
       temperatures: Array.from({ length: 12 }, () => seededRandomFloat(25, 70)),

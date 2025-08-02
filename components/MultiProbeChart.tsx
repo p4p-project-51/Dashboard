@@ -13,6 +13,10 @@ import {
   RangeSlider,
 } from "@mantine/core";
 
+export type SessionInfo = {
+  id: string;
+  startTimestamp: number;
+};
 export type ProbeData = {
   timestamp: number;
   temperatures: number[]; // 12 probes
@@ -24,7 +28,7 @@ export type ProbeData = {
 
 export default function MultiProbeChart() {
   const [data, setData] = useState<ProbeData[]>([]);
-  const [sessions, setSessions] = useState<string[]>([]);
+  const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [selectedSession, setSelectedSession] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const chartWidth = 900;
@@ -33,9 +37,9 @@ export default function MultiProbeChart() {
     // Fetch session list on mount
     fetch("/api/probe-data/sessions")
       .then((res) => res.json())
-      .then((sessionList) => {
+      .then((sessionList: SessionInfo[]) => {
         setSessions(sessionList);
-        setSelectedSession(sessionList[0] || "");
+        setSelectedSession(sessionList[0]?.id || "");
       });
   }, []);
 
@@ -68,6 +72,25 @@ export default function MultiProbeChart() {
     [data]
   );
 
+  // Convert chart data to Float64Array for uPlot
+  const tempChartData = useMemo(
+    () => [
+      Float64Array.from(x),
+      ...tempSeries.map((arr) => Float64Array.from(arr)),
+    ],
+    [x, tempSeries]
+  );
+  const metricsChartData = useMemo(
+    () => [
+      Float64Array.from(x),
+      Float64Array.from(pumpVoltage),
+      Float64Array.from(pumpCurrent),
+      Float64Array.from(pumpPower),
+      Float64Array.from(flowSensorCurrent),
+    ],
+    [x, pumpVoltage, pumpCurrent, pumpPower, flowSensorCurrent]
+  );
+
   // Shared zoom state for both charts (xMin, xMax, yMin, yMax)
   const [zoom, setZoom] = useState<[number, number, number?, number?] | null>(
     null
@@ -92,7 +115,8 @@ export default function MultiProbeChart() {
 
   function formatTime(self: unknown, rawValue: number) {
     if (rawValue === null || isNaN(rawValue)) return "??";
-    return `${rawValue.toFixed(1)}s`;
+    // Convert ms to seconds for display
+    return `${(rawValue / 1000).toFixed(1)}s`;
   }
   function formatValue(rawValue: number) {
     if (rawValue === null || isNaN(rawValue)) return "";
@@ -111,7 +135,6 @@ export default function MultiProbeChart() {
         v == null || isNaN(v) ? "--" : `${v.toFixed(2)}°C`,
     })),
   ];
-  const tempChartData = useMemo(() => [x, ...tempSeries], [x, tempSeries]);
   const tempOpts = useMemo(
     () => ({
       width: chartWidth,
@@ -232,10 +255,6 @@ export default function MultiProbeChart() {
         v == null || isNaN(v) ? "--" : `${v.toFixed(2)}A`,
     },
   ];
-  const metricsChartData = useMemo(
-    () => [x, pumpVoltage, pumpCurrent, pumpPower, flowSensorCurrent],
-    [x, pumpVoltage, pumpCurrent, pumpPower, flowSensorCurrent]
-  );
   const metricsOpts = useMemo(
     () => ({
       width: chartWidth,
@@ -342,10 +361,15 @@ export default function MultiProbeChart() {
         <Select
           label="Session"
           placeholder="Select session"
-          data={sessions.map((sessionId) => ({
-            value: sessionId,
-            label: sessionId,
-          }))}
+          data={sessions
+            .slice()
+            .sort((a, b) => b.startTimestamp - a.startTimestamp)
+            .map((session) => ({
+              value: session.id,
+              label: `${session.id} (${new Date(
+                session.startTimestamp
+              ).toLocaleString()})`,
+            }))}
           value={selectedSession}
           onChange={(value) => setSelectedSession(value || "")}
           size="sm"
@@ -397,6 +421,7 @@ export default function MultiProbeChart() {
             ]}
             size="lg"
             radius="md"
+            label={(value) => formatTime(null, value)}
           />
         </div>
         <div className={styles.resetZoomRow}>
