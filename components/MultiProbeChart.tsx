@@ -368,7 +368,7 @@ export default function MultiProbeChart() {
           }}
         />
       </div>
-      <Paper shadow="sm" p="xl" style={{ position: "relative" }}>
+      <Paper shadow="sm" p="xl" className={styles.chartPaper}>
         <LoadingOverlay
           visible={loading}
           zIndex={1000}
@@ -388,34 +388,13 @@ export default function MultiProbeChart() {
         radius={8}
         shadow="xs"
         p={8}
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          overflowX: "auto",
-          position: "relative",
-        }}
+        className={styles.metricsPaper}
       >
-        <div
-          style={{
-            margin: "4px 0 8px",
-            maxWidth: "100%",
-            textAlign: "center",
-            fontSize: "12px",
-            color: "#666",
-          }}
-        >
+        <div className={styles.tip}>
           <b>Tip:</b> Drag along one axis of the graph to zoom that axis or drag
           diagonally to zoom into a rectangle. Double-click to reset zoom.
         </div>
-        <div
-          style={{
-            width: "100%",
-            maxWidth: chartWidth,
-            margin: "12px 24px 16px",
-          }}
-        >
+        <div className={styles.rangeSliderContainer}>
           <RangeSlider
             min={minX}
             max={maxX}
@@ -432,14 +411,7 @@ export default function MultiProbeChart() {
             radius="md"
           />
         </div>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            gap: 8,
-            marginTop: 8,
-          }}
-        >
+        <div className={styles.resetZoomRow}>
           <Button
             variant="default"
             radius="md"
@@ -453,7 +425,7 @@ export default function MultiProbeChart() {
           </Button>
         </div>
       </Paper>
-      <Paper shadow="sm" p="xl" style={{ position: "relative" }}>
+      <Paper shadow="sm" p="xl" className={styles.chartPaper}>
         <LoadingOverlay
           visible={loading}
           zIndex={1000}
