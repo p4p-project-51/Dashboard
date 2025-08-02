@@ -4,10 +4,14 @@ import React, { useEffect, useState, useMemo, useRef } from "react";
 import UplotReact from "uplot-react";
 import "uplot/dist/uPlot.min.css";
 import styles from "./MultiProbeChart.module.css";
-import Slider from "rc-slider";
-import "rc-slider/assets/index.css";
 import { IconZoom } from "@tabler/icons-react";
-import { Select, LoadingOverlay, Box } from "@mantine/core";
+import {
+  Select,
+  LoadingOverlay,
+  Paper,
+  Button,
+  RangeSlider,
+} from "@mantine/core";
 
 export type ProbeData = {
   timestamp: number;
@@ -350,34 +354,34 @@ export default function MultiProbeChart() {
         <Select
           label="Session"
           placeholder="Select session"
-          data={sessions.map((sessionId) => ({ value: sessionId, label: sessionId }))}
+          data={sessions.map((sessionId) => ({
+            value: sessionId,
+            label: sessionId,
+          }))}
           value={selectedSession}
           onChange={(value) => setSelectedSession(value || "")}
+          size="sm"
+          radius="md"
           styles={{
             label: { fontWeight: 600, fontSize: 14 },
             input: { fontSize: 14, borderRadius: 4 },
           }}
         />
       </div>
-      <Box
-        pos="relative"
+      <Paper
+        mb={24}
+        w="100%"
+        radius={8}
+        shadow="xs"
+        p={8}
         style={{
-          marginBottom: 24,
-          width: "100%",
           display: "flex",
           justifyContent: "center",
           overflowX: "auto",
-          borderRadius: 8,
           background: "#fff",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-          padding: 8,
         }}
       >
-        <LoadingOverlay
-          visible={loading}
-          zIndex={1000}
-          overlayProps={{ radius: "sm", blur: 2 }}
-        />
+        <LoadingOverlay visible={loading} zIndex={1000} />
         <UplotReact
           options={tempOpts}
           data={tempChartData}
@@ -385,20 +389,20 @@ export default function MultiProbeChart() {
             tempPlotRef.current = chart;
           }}
         />
-      </Box>
-      <div
+      </Paper>
+      <Paper
+        mb={8}
+        w="100%"
+        radius={8}
+        shadow="xs"
+        p={8}
         style={{
-          marginBottom: 8,
-          width: "100%",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
           overflowX: "auto",
-          borderRadius: 8,
           background: "#fff",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-          padding: 8,
         }}
       >
         <div
@@ -416,122 +420,71 @@ export default function MultiProbeChart() {
         <div
           style={{
             width: "100%",
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-            paddingBottom: 16,
-            gap: 8,
+            maxWidth: chartWidth,
+            margin: "12px 24px 16px",
           }}
         >
-          <div
-            style={{
-              width: "100%",
-              maxWidth: chartWidth,
-              margin: "12px 24px 16px",
+          <RangeSlider
+            min={minX}
+            max={maxX}
+            step={(maxX - minX) / 500 || 0.01}
+            value={brush ?? [minX, maxX]}
+            onChange={(vals: [number, number]) => {
+              handleBrushChange([Number(vals[0]), Number(vals[1])]);
             }}
-          >
-            <Slider
-              range
-              min={minX}
-              max={maxX}
-              step={(maxX - minX) / 500 || 0.01}
-              value={brush ?? [minX, maxX]}
-              allowCross={false}
-              onChange={(vals: number[] | number) => {
-                const arr = Array.isArray(vals) ? vals : [minX, maxX];
-                handleBrushChange([Number(arr[0]), Number(arr[1])]);
-              }}
-              trackStyle={[{ backgroundColor: "#000", height: 12 }]} // matches previous style
-              handleStyle={[
-                {
-                  borderColor: "#000",
-                  backgroundColor: "#fff",
-                  height: 22,
-                  width: 22,
-                  marginTop: -6,
-                  opacity: 1,
-                },
-                {
-                  borderColor: "#000",
-                  backgroundColor: "#fff",
-                  height: 22,
-                  width: 22,
-                  marginTop: -6,
-                  opacity: 1,
-                },
-              ]}
-              dotStyle={{ display: "none" }}
-              activeDotStyle={{ display: "none" }}
-              marks={{
-                [minX]: {
-                  label: formatTime(null, minX),
-                  style: { color: "#000", marginTop: 5 },
-                },
-                [maxX]: {
-                  label: formatTime(null, maxX),
-                  style: { color: "#000", marginTop: 5 },
-                },
-              }}
-              railStyle={{
-                backgroundColor: "#e5e7eb",
-                height: 12,
-                borderRadius: 8,
-              }}
-            />
-          </div>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              gap: 8,
-              marginTop: 8,
+            marks={[
+              { value: minX, label: formatTime(null, minX) },
+              { value: maxX, label: formatTime(null, maxX) },
+            ]}
+            size="lg"
+            radius="md"
+            color="dark"
+            styles={{
+              track: { backgroundColor: "#000", height: 12 },
+              bar: { backgroundColor: "#000", height: 12 },
+              thumb: {
+                borderColor: "#000",
+                backgroundColor: "#fff",
+              },
+              mark: { color: "#000", marginTop: 5 },
             }}
-          >
-            <button
-              type="button"
-              style={{
-                marginLeft: 8,
-                padding: "4px 8px",
-                borderRadius: 4,
-                border: "1px solid #ccc",
-                background: "#fff",
-                fontSize: "12px",
-                fontWeight: 600,
-                display: "flex",
-                alignItems: "center",
-                gap: 4,
-                boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-                cursor: "pointer",
-              }}
-              aria-label="Reset Zoom"
-              onClick={() => setZoom(null)}
-            >
-              <IconZoom />
-              <span>Reset Zoom</span>
-            </button>
-          </div>
+          />
         </div>
-      </div>
-      <Box
-        pos="relative"
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            gap: 8,
+            marginTop: 8,
+          }}
+        >
+          <Button
+            variant="default"
+            radius="md"
+            size="sm"
+            leftSection={<IconZoom />}
+            onClick={() => setZoom(null)}
+            aria-label="Reset Zoom"
+            style={{ fontWeight: 600, fontSize: 12 }}
+          >
+            Reset Zoom
+          </Button>
+        </div>
+      </Paper>
+      <Paper
+        mb={24}
+        w="100%"
+        radius={8}
+        shadow="xs"
+        p={8}
         style={{
-          marginBottom: 24,
-          width: "100%",
           display: "flex",
           justifyContent: "center",
           overflowX: "auto",
-          borderRadius: 8,
           background: "#fff",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-          padding: 8,
         }}
       >
-        <LoadingOverlay
-          visible={loading}
-          zIndex={1000}
-          overlayProps={{ radius: "sm", blur: 2 }}
-        />
+        <LoadingOverlay visible={loading} zIndex={1000} />
         <UplotReact
           options={metricsOpts}
           data={metricsChartData}
@@ -539,7 +492,7 @@ export default function MultiProbeChart() {
             metricsPlotRef.current = chart;
           }}
         />
-      </Box>
+      </Paper>
     </div>
   );
 }
