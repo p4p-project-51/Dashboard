@@ -5,7 +5,10 @@ import {
   ColorSchemeScript,
   mantineHtmlProps,
 } from "@mantine/core";
-import { theme } from "../theme";
+import "@mantine/core/styles.css";
+import { shadcnCssVariableResolver } from "../cssVariableResolver";
+import { shadcnTheme } from "../theme";
+import "../style.css";
 
 export const metadata = {
   title: "Mantine Next.js template",
@@ -24,7 +27,12 @@ export default function RootLayout({ children }: { children: any }) {
         />
       </head>
       <body>
-        <MantineProvider theme={theme}>{children}</MantineProvider>
+        <MantineProvider
+          theme={shadcnTheme}
+          cssVariablesResolver={shadcnCssVariableResolver}
+        >
+          {children}
+        </MantineProvider>
       </body>
     </html>
   );
