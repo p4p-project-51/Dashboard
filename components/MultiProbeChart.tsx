@@ -17,18 +17,28 @@ export type ProbeData = {
   flowSensorCurrent: number;
 };
 
-async function fetchProbeData(): Promise<ProbeData[]> {
-  const res = await fetch("/api/probe-data");
-  return res.json();
-}
-
 export default function MultiProbeChart() {
   const [data, setData] = useState<ProbeData[]>([]);
+  const [sessions, setSessions] = useState<string[]>([]);
+  const [selectedSession, setSelectedSession] = useState<string>("");
   const chartWidth = 900;
 
   useEffect(() => {
-    fetchProbeData().then(setData);
+    // Fetch session list on mount
+    fetch("/api/probe-data/sessions")
+      .then((res) => res.json())
+      .then((sessionList) => {
+        setSessions(sessionList);
+        setSelectedSession(sessionList[0] || "");
+      });
   }, []);
+
+  useEffect(() => {
+    if (!selectedSession) return;
+    fetch(`/api/probe-data/${encodeURIComponent(selectedSession)}`)
+      .then((res) => res.json())
+      .then(setData);
+  }, [selectedSession]);
 
   // Prepare chart data
   const x = useMemo(
@@ -329,6 +339,35 @@ export default function MultiProbeChart() {
 
   return (
     <div className={styles.chartContainer}>
+      <div style={{ marginBottom: 16 }}>
+        <label
+          htmlFor="session-select"
+          style={{
+            fontWeight: 600,
+            fontSize: 14,
+            marginRight: 8,
+          }}
+        >
+          Session:
+        </label>
+        <select
+          id="session-select"
+          value={selectedSession}
+          onChange={(e) => setSelectedSession(e.target.value)}
+          style={{
+            fontSize: 14,
+            padding: "4px 8px",
+            borderRadius: 4,
+            border: "1px solid #ccc",
+          }}
+        >
+          {sessions.map((sessionId) => (
+            <option key={sessionId} value={sessionId}>
+              {sessionId}
+            </option>
+          ))}
+        </select>
+      </div>
       <div
         style={{
           marginBottom: 24,
@@ -471,7 +510,7 @@ export default function MultiProbeChart() {
               aria-label="Reset Zoom"
               onClick={() => setZoom(null)}
             >
-              <IconZoom/>
+              <IconZoom />
               <span>Reset Zoom</span>
             </button>
           </div>

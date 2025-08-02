@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 
-// Dummy data generation for probe data
-function randomFloat(min: number, max: number) {
-  return Math.random() * (max - min) + min;
-}
+const SESSION_IDS = ["A", "B", "C"];
 
 function smoothArray(arr: number[], windowSize: number): number[] {
   const result = [];
@@ -23,27 +20,41 @@ function smoothArray(arr: number[], windowSize: number): number[] {
   return result;
 }
 
-export async function GET() {
-  const now = Math.floor(Date.now() / 1000);
+export async function GET(
+  request: Request,
+  { params }: { params: { sessionId: string } }
+) {
+  const sessionId = params.sessionId || SESSION_IDS[0];
 
+  // Use sessionId to generate different data (for demo, just seed random)
+  let seed = 0;
+  for (let i = 0; i < sessionId.length; ++i) seed += sessionId.charCodeAt(i);
+  function seededRandom() {
+    seed = (seed * 9301 + 49297) % 233280;
+    return seed / 233280;
+  }
+  function seededRandomFloat(min: number, max: number) {
+    return seededRandom() * (max - min) + min;
+  }
+
+  const now = Math.floor(Date.now() / 1000);
   const data = Array.from({ length: 100 }, (_, i) => {
     const timestamp = now - 100 + i;
-    const data = {
+    const entry = {
       timestamp,
-      temperatures: Array.from({ length: 12 }, () => randomFloat(25, 70)),
-      pumpVoltage: randomFloat(0.1, 2),
-      pumpCurrent: randomFloat(0.5, 15),
-      flowSensorCurrent: randomFloat(0, 0.2),
+      temperatures: Array.from({ length: 12 }, () => seededRandomFloat(25, 70)),
+      pumpVoltage: seededRandomFloat(0.1, 2),
+      pumpCurrent: seededRandomFloat(0.5, 15),
+      flowSensorCurrent: seededRandomFloat(0, 0.2),
     };
-
     return {
-      ...data,
-      pumpPower: data.pumpVoltage * data.pumpCurrent,
+      ...entry,
+      pumpPower: entry.pumpVoltage * entry.pumpCurrent,
     };
   });
 
   // Smooth each temperature probe across all timestamps
-  const windowSize = 7; // You can adjust this for more/less smoothing
+  const windowSize = 7;
   for (let probeIdx = 0; probeIdx < 12; probeIdx++) {
     const probeTemps = data.map((d) => d.temperatures[probeIdx]);
     const smoothed = smoothArray(probeTemps, windowSize);
