@@ -16,7 +16,9 @@
     "clsx": "^2.1.1",
     "next": "15.2.3",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "uplot": "^1.6.32",
+    "uplot-react": "^1.2.4"
   },
   "devDependencies": {
     "@types/node": "22.13.11",
