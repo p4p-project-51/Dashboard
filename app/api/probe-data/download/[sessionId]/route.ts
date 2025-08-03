@@ -1,30 +1,25 @@
 import { NextRequest } from "next/server";
-import path from "path";
-import fs from "fs";
+import { findSessionFileById, getSessionFileContentById } from "../../helpers";
 
 export async function GET(
   req: NextRequest,
   { params }: { params: { sessionId: string } }
 ) {
   const { sessionId } = params;
-  // Find the CSV file in data/sessions matching the sessionId
-  const dataDir = path.join(process.cwd(), "data/sessions");
-  const files = fs.readdirSync(dataDir);
-  const csvFile = files.find(
-    (f) => f.includes(sessionId) && f.endsWith(".csv")
-  );
-  if (!csvFile) {
+  const content = getSessionFileContentById(sessionId);
+  const fileName =
+    findSessionFileById(sessionId)?.fileName ?? `session-${sessionId}.csv`;
+
+  if (!content) {
     return new Response("File not found", { status: 404 });
   }
-  const filePath = path.join(dataDir, csvFile);
-  const stat = fs.statSync(filePath);
-  const stream = fs.createReadStream(filePath);
-  return new Response(stream as any, {
+
+  return new Response(content, {
     status: 200,
     headers: {
       "Content-Type": "text/csv",
-      "Content-Disposition": `attachment; filename=\"${csvFile}\"`,
-      "Content-Length": stat.size.toString(),
+      "Content-Disposition": `attachment; filename=\"${fileName}\"`,
+      "Content-Length": content.length.toString(),
     },
   });
 }

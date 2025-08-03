@@ -30,7 +30,9 @@ export async function POST(req: NextRequest) {
   } else {
     ids = ids.filter((id) => id !== sessionId);
   }
+
   fs.writeFileSync(STAR_FILE, JSON.stringify(ids));
+
   return new Response(JSON.stringify(ids), {
     status: 200,
     headers: { "Content-Type": "application/json" },

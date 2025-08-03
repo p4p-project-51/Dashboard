@@ -1,21 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  ensureDir,
+  getAllSessions,
+  listSessionFiles,
+  parseSessionFileName,
+} from "../helpers";
 import fs from "fs";
 import path from "path";
 
 const DATA_DIR = path.resolve(process.cwd(), "data/sessions");
-
-function ensureDir() {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-}
-
-function getSessionFiles() {
-  ensureDir();
-  return fs
-    .readdirSync(DATA_DIR)
-    .filter((f) =>
-      /^\d+ \d{4}-\d{2}-\d{2} \d{1,2}-\d{2}(am|pm) [a-zA-Z0-9]{7}\.csv$/.test(f)
-    );
-}
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -35,9 +28,9 @@ export async function POST(req: NextRequest) {
 
   ensureDir();
   // Get next incrementing sequence number
-  const files = getSessionFiles();
+  const files = getAllSessions();
   const sequences = files
-    .map((f) => parseInt(f.split(" ")[0], 10))
+    .map((f) => f.sequence)
     .filter((n) => Number.isFinite(n));
   const nextSequence = sequences.length ? Math.max(...sequences) + 1 : 1;
   // Get current date in yyyy-mm-dd
