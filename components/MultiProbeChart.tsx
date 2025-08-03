@@ -61,7 +61,9 @@ export default function MultiProbeChart() {
           setData([]);
         }
         // Reset zoom only after new data is loaded
-        setZoom(null);
+        setXZoom(null);
+        setTempYZoom(null);
+        setMetricsYZoom(null);
         setLoading(false);
       })
       .catch(() => {
@@ -106,25 +108,25 @@ export default function MultiProbeChart() {
     [x, pumpVoltage, pumpCurrent, pumpPower, flowSensorCurrent]
   );
 
-  // Shared zoom state for both charts (xMin, xMax, yMin, yMax)
-  const [zoom, setZoom] = useState<[number, number, number?, number?] | null>(
-    null
-  );
+  // Shared zoom state for both charts (xMin, xMax)
+  const [xZoom, setXZoom] = useState<[number, number] | null>(null);
+  // Individual y-axis zoom for each chart
+  const [tempYZoom, setTempYZoom] = useState<[number, number] | null>(null);
+  const [metricsYZoom, setMetricsYZoom] = useState<[number, number] | null>(null);
   const minX = x.length > 0 ? x[0] : 0;
   const maxX = x.length > 0 ? x[x.length - 1] : 1;
   const [brush, setBrush] = useState<[number, number] | null>(null);
 
   useEffect(() => {
-    if (zoom) setBrush([zoom[0], zoom[1]]);
+    if (xZoom) setBrush([xZoom[0], xZoom[1]]);
     else setBrush([minX, maxX]);
-  }, [zoom, minX, maxX]);
+  }, [xZoom, minX, maxX]);
 
   const handleBrushChange = (newBrush: [number, number]) => {
     setBrush(newBrush);
-    setZoom((prevZoom) => {
+    setXZoom((prevZoom) => {
       if (newBrush[0] === minX && newBrush[1] === maxX) return null;
-      if (prevZoom) return [newBrush[0], newBrush[1], prevZoom[2], prevZoom[3]];
-      return [newBrush[0], newBrush[1], NaN, NaN];
+      return [newBrush[0], newBrush[1]];
     });
   };
 
@@ -158,11 +160,12 @@ export default function MultiProbeChart() {
       scales: {
         x: {
           time: false,
-          range: zoom
-            ? () => [zoom[0], zoom[1]] as [number, number]
-            : undefined,
+          range: xZoom ? () => [xZoom[0], xZoom[1]] as [number, number] : undefined,
         },
-        y: { auto: true },
+        y: {
+          auto: !tempYZoom,
+          range: tempYZoom ? () => [tempYZoom[0], tempYZoom[1]] as [number, number] : undefined,
+        },
       },
       series: tempSeriesConfig,
       axes: [
@@ -196,19 +199,21 @@ export default function MultiProbeChart() {
               };
               posToVal: (px: number, scale: string) => number;
             };
-            if (uu.select.width > 0 && uu.select.height > 0) {
+            // Only sync horizontal zoom
+            if (uu.select.width > 0) {
               const minX = uu.posToVal(uu.select.left, "x");
               const maxX = uu.posToVal(uu.select.left + uu.select.width, "x");
-              setZoom([minX, maxX, NaN, NaN]);
-            } else if (uu.select.width > 0) {
-              setZoom((prevZoom) => [
-                uu.posToVal(uu.select.left, "x"),
-                uu.posToVal(uu.select.left + uu.select.width, "x"),
-                prevZoom ? prevZoom[2] : NaN,
-                prevZoom ? prevZoom[3] : NaN,
-              ]);
-            } else {
-              setZoom(null);
+              setXZoom([minX, maxX]);
+            } else if (!uu.select.width) {
+              setXZoom(null);
+            }
+            // Only apply vertical zoom to this chart
+            if (uu.select.height > 0) {
+              const minY = uu.posToVal(uu.select.top + uu.select.height, "y");
+              const maxY = uu.posToVal(uu.select.top, "y");
+              setTempYZoom([minY, maxY]);
+            } else if (!uu.select.height) {
+              setTempYZoom(null);
             }
           },
         ],
@@ -230,16 +235,18 @@ export default function MultiProbeChart() {
           function (u: unknown) {
             const uPlotInstance = u as { over: HTMLElement };
             if (uPlotInstance && uPlotInstance.over) {
-              uPlotInstance.over.addEventListener("dblclick", () =>
-                setZoom(null)
-              );
+              uPlotInstance.over.addEventListener("dblclick", () => {
+                setXZoom(null);
+                setTempYZoom(null);
+                setMetricsYZoom(null);
+              });
             }
           },
         ],
       },
       select: { show: true, over: true, left: 0, top: 0, width: 0, height: 0 },
     }),
-    [setZoom, zoom, chartWidth]
+    [xZoom, tempYZoom, chartWidth]
   );
 
   // Metrics chart config
@@ -278,11 +285,12 @@ export default function MultiProbeChart() {
       scales: {
         x: {
           time: false,
-          range: zoom
-            ? () => [zoom[0], zoom[1]] as [number, number]
-            : undefined,
+          range: xZoom ? () => [xZoom[0], xZoom[1]] as [number, number] : undefined,
         },
-        y: { auto: true },
+        y: {
+          auto: !metricsYZoom,
+          range: metricsYZoom ? () => [metricsYZoom[0], metricsYZoom[1]] as [number, number] : undefined,
+        },
       },
       series: metricsSeriesConfig,
       axes: [
@@ -316,19 +324,21 @@ export default function MultiProbeChart() {
               };
               posToVal: (px: number, scale: string) => number;
             };
-            if (uu.select.width > 0 && uu.select.height > 0) {
+            // Only sync horizontal zoom
+            if (uu.select.width > 0) {
               const minX = uu.posToVal(uu.select.left, "x");
               const maxX = uu.posToVal(uu.select.left + uu.select.width, "x");
-              setZoom([minX, maxX, NaN, NaN]);
-            } else if (uu.select.width > 0) {
-              setZoom((prevZoom) => [
-                uu.posToVal(uu.select.left, "x"),
-                uu.posToVal(uu.select.left + uu.select.width, "x"),
-                prevZoom ? prevZoom[2] : NaN,
-                prevZoom ? prevZoom[3] : NaN,
-              ]);
-            } else {
-              setZoom(null);
+              setXZoom([minX, maxX]);
+            } else if (!uu.select.width) {
+              setXZoom(null);
+            }
+            // Only apply vertical zoom to this chart
+            if (uu.select.height > 0) {
+              const minY = uu.posToVal(uu.select.top + uu.select.height, "y");
+              const maxY = uu.posToVal(uu.select.top, "y");
+              setMetricsYZoom([minY, maxY]);
+            } else if (!uu.select.height) {
+              setMetricsYZoom(null);
             }
           },
         ],
@@ -353,16 +363,17 @@ export default function MultiProbeChart() {
           function (u: unknown) {
             const uPlotInstance = u as { over: HTMLElement };
             if (uPlotInstance && uPlotInstance.over) {
-              uPlotInstance.over.addEventListener("dblclick", () =>
-                setZoom(null)
-              );
+              uPlotInstance.over.addEventListener("dblclick", () => {
+                setXZoom(null);
+                setMetricsYZoom(null);
+              });
             }
           },
         ],
       },
       select: { show: true, over: true, left: 0, top: 0, width: 0, height: 0 },
     }),
-    [setZoom, zoom, chartWidth]
+    [xZoom, metricsYZoom, chartWidth]
   );
 
   // Refs to uPlot instances for cursor sync
@@ -462,7 +473,11 @@ export default function MultiProbeChart() {
                 radius="md"
                 size="sm"
                 leftSection={<IconZoom />}
-                onClick={() => setZoom(null)}
+                onClick={() => {
+                  setXZoom(null);
+                  setTempYZoom(null);
+                  setMetricsYZoom(null);
+                }}
                 aria-label="Reset Zoom"
                 style={{ fontWeight: 600, fontSize: 12 }}
                 disabled={sessions.length === 0}
