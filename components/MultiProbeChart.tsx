@@ -112,7 +112,9 @@ export default function MultiProbeChart() {
   const [xZoom, setXZoom] = useState<[number, number] | null>(null);
   // Individual y-axis zoom for each chart
   const [tempYZoom, setTempYZoom] = useState<[number, number] | null>(null);
-  const [metricsYZoom, setMetricsYZoom] = useState<[number, number] | null>(null);
+  const [metricsYZoom, setMetricsYZoom] = useState<[number, number] | null>(
+    null
+  );
   const minX = x.length > 0 ? x[0] : 0;
   const maxX = x.length > 0 ? x[x.length - 1] : 1;
   const [brush, setBrush] = useState<[number, number] | null>(null);
@@ -160,11 +162,15 @@ export default function MultiProbeChart() {
       scales: {
         x: {
           time: false,
-          range: xZoom ? () => [xZoom[0], xZoom[1]] as [number, number] : undefined,
+          range: xZoom
+            ? () => [xZoom[0], xZoom[1]] as [number, number]
+            : undefined,
         },
         y: {
           auto: !tempYZoom,
-          range: tempYZoom ? () => [tempYZoom[0], tempYZoom[1]] as [number, number] : undefined,
+          range: tempYZoom
+            ? () => [tempYZoom[0], tempYZoom[1]] as [number, number]
+            : undefined,
         },
       },
       series: tempSeriesConfig,
@@ -285,11 +291,15 @@ export default function MultiProbeChart() {
       scales: {
         x: {
           time: false,
-          range: xZoom ? () => [xZoom[0], xZoom[1]] as [number, number] : undefined,
+          range: xZoom
+            ? () => [xZoom[0], xZoom[1]] as [number, number]
+            : undefined,
         },
         y: {
           auto: !metricsYZoom,
-          range: metricsYZoom ? () => [metricsYZoom[0], metricsYZoom[1]] as [number, number] : undefined,
+          range: metricsYZoom
+            ? () => [metricsYZoom[0], metricsYZoom[1]] as [number, number]
+            : undefined,
         },
       },
       series: metricsSeriesConfig,
