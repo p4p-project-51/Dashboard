@@ -187,7 +187,7 @@ export default function MultiProbeChart() {
   };
 
   function formatTime(self: unknown, rawValue: number) {
-    if (rawValue === null || isNaN(rawValue)) return "??";
+    if (rawValue === null || isNaN(rawValue)) return "--.-s";
     // Convert ms to seconds for display
     return `${(rawValue / 1000).toFixed(1)}s`;
   }
@@ -202,12 +202,15 @@ export default function MultiProbeChart() {
   const tempSeriesConfig = useMemo(() => {
     return [
       { label: "Time (s)", value: formatTime },
-      ...tempHeaders.map((header, i) => ({
-        label: header,
-        stroke: `hsl(${(i * 30) % 360}, 70%, 50%)`,
-        value: (_self: unknown, v: number) =>
-          v == null || isNaN(v) ? "--" : `${v.toFixed(2)}°C`,
-      })),
+      ...tempHeaders.map((header) => {
+        const hue = hashString(header) % 360;
+        return {
+          label: header,
+          stroke: `hsl(${hue}, 60%, 60%)`,
+          value: (_self: unknown, v: number) =>
+            v == null || isNaN(v) ? "--.--°C" : `${v.toFixed(2)}°C`,
+        };
+      }),
     ];
   }, [tempHeaders]);
   const tempOpts = useMemo(
@@ -232,7 +235,6 @@ export default function MultiProbeChart() {
       series: tempSeriesConfig,
       axes: [
         {
-          stroke: "#888",
           grid: { show: true },
           values: (self: unknown, ticks: number[]) =>
             ticks.map((t) => formatTime(self, t)),
@@ -240,7 +242,6 @@ export default function MultiProbeChart() {
           label: "Time (s)",
         },
         {
-          stroke: "#888",
           grid: { show: true },
           values: (self: unknown, ticks: number[]) =>
             ticks.map((t) => formatValue(t)),
@@ -315,12 +316,15 @@ export default function MultiProbeChart() {
   const metricsSeriesConfig = useMemo(() => {
     return [
       { label: "Time (s)", value: formatTime },
-      ...metricHeaders.map((header, i) => ({
-        label: header,
-        stroke: `hsl(${(i * 30) % 360}, 70%, 50%)`,
-        value: (_self: unknown, v: number) =>
-          v == null || isNaN(v) ? "--" : `${v.toFixed(2)}`,
-      })),
+      ...metricHeaders.map((header) => {
+        const hue = hashString(header) % 360;
+        return {
+          label: header,
+          stroke: `hsl(${hue}, 60%, 60%)`,
+          value: (_self: unknown, v: number) =>
+            v == null || isNaN(v) ? "--.--°C" : `${v.toFixed(2)}`,
+        };
+      }),
     ];
   }, [metricHeaders]);
   const metricsOpts = useMemo(
@@ -345,7 +349,6 @@ export default function MultiProbeChart() {
       series: metricsSeriesConfig,
       axes: [
         {
-          stroke: "#888",
           grid: { show: true },
           values: (self: unknown, ticks: number[]) =>
             ticks.map((t) => formatTime(self, t)),
@@ -353,7 +356,6 @@ export default function MultiProbeChart() {
           label: "Time (s)",
         },
         {
-          stroke: "#888",
           grid: { show: true },
           values: (self: unknown, ticks: number[]) =>
             ticks.map((t) => formatValue(t)),
@@ -654,4 +656,13 @@ export default function MultiProbeChart() {
       )}
     </div>
   );
+}
+
+function hashString(str: string) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0; // Convert to 32bit integer
+  }
+  return Math.abs(hash);
 }
