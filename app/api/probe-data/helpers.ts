@@ -96,3 +96,13 @@ export function getParsedSessionById(id: string) {
 
   return parseSessionFileContent(content);
 }
+
+export function atomicWriteFileSync(
+  targetPath: string,
+  data: string,
+  encoding: BufferEncoding = "utf8"
+) {
+  const tempPath = targetPath + ".tmp";
+  fs.writeFileSync(tempPath, data, { encoding });
+  fs.renameSync(tempPath, targetPath);
+}

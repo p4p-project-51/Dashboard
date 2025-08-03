@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  ensureDir,
-  getAllSessions,
-  listSessionFiles,
-  parseSessionFileName,
-} from "../helpers";
+import { ensureDir, getAllSessions, atomicWriteFileSync } from "../helpers";
 import fs from "fs";
 import path from "path";
 
@@ -61,7 +56,7 @@ export async function POST(req: NextRequest) {
   ].join(",");
 
   if (!fs.existsSync(filePath)) {
-    fs.writeFileSync(filePath, header + "\n", "utf8");
+    atomicWriteFileSync(filePath, header + "\n", "utf8");
   }
 
   // Write values

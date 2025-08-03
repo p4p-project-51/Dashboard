@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import path from "path";
 import fs from "fs";
+import { atomicWriteFileSync } from "../helpers";
 
 const STAR_FILE = path.join(process.cwd(), "data/starred_sessions.json");
 
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
     ids = ids.filter((id) => id !== sessionId);
   }
 
-  fs.writeFileSync(STAR_FILE, JSON.stringify(ids));
+  atomicWriteFileSync(STAR_FILE, JSON.stringify(ids));
 
   return new Response(JSON.stringify(ids), {
     status: 200,
