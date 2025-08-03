@@ -4,13 +4,21 @@ import React, { useEffect, useState, useMemo, useRef } from "react";
 import UplotReact from "uplot-react";
 import "uplot/dist/uPlot.min.css";
 import styles from "./MultiProbeChart.module.css";
-import { IconZoom } from "@tabler/icons-react";
+import {
+  IconZoom,
+  IconDownload,
+  IconReload,
+  IconStar,
+  IconStarFilled,
+} from "@tabler/icons-react";
 import {
   Select,
   LoadingOverlay,
   Paper,
   Button,
   RangeSlider,
+  Group,
+  Container,
 } from "@mantine/core";
 
 export type SessionInfo = {
@@ -35,6 +43,8 @@ export default function MultiProbeChart() {
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [selectedSession, setSelectedSession] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [starredSessions, setStarredSessions] = useState<string[]>([]);
+  const [starLoading, setStarLoading] = useState(false);
   const chartWidth = 900;
 
   useEffect(() => {
@@ -70,6 +80,13 @@ export default function MultiProbeChart() {
         setData([]);
         setLoading(false);
       });
+  }, [selectedSession]);
+
+  // Fetch starred sessions
+  useEffect(() => {
+    fetch("/api/probe-data/starred")
+      .then((res) => res.json())
+      .then((ids: string[]) => setStarredSessions(ids));
   }, [selectedSession]);
 
   // Prepare chart data
@@ -391,36 +408,141 @@ export default function MultiProbeChart() {
   const metricsPlotRef = useRef<any>(null);
   const isSyncingCursor = useRef(false);
 
+  // Helper to toggle star
+  const toggleStar = async () => {
+    setStarLoading(true);
+    await fetch("/api/probe-data/starred", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sessionId: selectedSession,
+        starred: !starredSessions.includes(selectedSession),
+      }),
+    });
+    // Refetch
+    fetch("/api/probe-data/starred")
+      .then((res) => res.json())
+      .then((ids: string[]) => setStarredSessions(ids))
+      .finally(() => setStarLoading(false));
+  };
+
+  // Helper to reload graph
+  const reloadGraph = () => {
+    setLoading(true);
+    fetch(`/api/probe-data/${encodeURIComponent(selectedSession)}`)
+      .then((res) => res.json())
+      .then((newData) => {
+        if (Array.isArray(newData)) {
+          setData(newData);
+        } else {
+          setData([]);
+        }
+        setXZoom(null);
+        setTempYZoom(null);
+        setMetricsYZoom(null);
+        setLoading(false);
+      })
+      .catch(() => {
+        setData([]);
+        setLoading(false);
+      });
+  };
+
   return (
     <div className={styles.chartContainer}>
-      <div style={{ marginBottom: 16 }}>
-        <Select
-          label="Session"
-          placeholder="Select session"
-          data={sessions
-            .sort((a, b) => parseInt(b.sequence) - parseInt(a.sequence))
-            .map((session) => ({
-              value: session.id,
-              label: session.fileName,
-            }))}
-          value={selectedSession}
-          onChange={(value) => setSelectedSession(value || "")}
-          onDropdownOpen={() => {
-            fetch("/api/probe-data/sessions")
-              .then((res) => res.json())
-              .then((sessionList: SessionInfo[]) => {
-                setSessions(sessionList);
-              });
-          }}
-          size="sm"
-          radius="md"
-          styles={{
-            label: { fontWeight: 600, fontSize: 14 },
-            input: { fontSize: 14, borderRadius: 4 },
-          }}
-          disabled={sessions.length === 0}
-        />
-      </div>
+      <Container size="md" px={0} style={{ marginBottom: 16 }}>
+        <Group justify="center" align="center">
+          <Select
+            label="Session"
+            placeholder="Select session"
+            data={sessions
+              .sort((a, b) => parseInt(b.sequence) - parseInt(a.sequence))
+              .map((session) => ({
+                value: session.id,
+                label: starredSessions.includes(session.id)
+                  ? `${session.fileName} ★`
+                  : session.fileName,
+                leftSection: starredSessions.includes(session.id) ? (
+                  <IconStarFilled size={16} color="#FFD700" />
+                ) : undefined,
+              }))}
+            value={selectedSession}
+            onChange={(value) => setSelectedSession(value || "")}
+            onDropdownOpen={() => {
+              fetch("/api/probe-data/sessions")
+                .then((res) => res.json())
+                .then((sessionList: SessionInfo[]) => {
+                  setSessions(sessionList);
+                });
+            }}
+            disabled={sessions.length === 0}
+            size="sm"
+            radius="md"
+            styles={{
+              label: { fontWeight: 600, fontSize: 14 },
+              input: { fontSize: 14, borderRadius: 4 },
+            }}
+            style={{ minWidth: 320 }}
+          />
+          <Button.Group>
+            <Button
+              variant="light"
+              leftSection={<IconDownload />}
+              disabled={!selectedSession}
+              size="sm"
+              radius="md"
+              style={{ fontWeight: 600, fontSize: 14 }}
+              onClick={() => {
+                if (!selectedSession) return;
+                const url = `/api/probe-data/download/${encodeURIComponent(
+                  selectedSession
+                )}`;
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = "session.csv";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }}
+            >
+              Download CSV
+            </Button>
+            <Button
+              variant="light"
+              leftSection={<IconReload />}
+              disabled={!selectedSession || loading}
+              size="sm"
+              radius="md"
+              style={{ fontWeight: 600, fontSize: 14 }}
+              onClick={reloadGraph}
+            >
+              Reload Graph
+            </Button>
+            <Button
+              variant={
+                starredSessions.includes(selectedSession) ? "filled" : "light"
+              }
+              leftSection={
+                starredSessions.includes(selectedSession) ? (
+                  <IconStarFilled />
+                ) : (
+                  <IconStar />
+                )
+              }
+              color={
+                starredSessions.includes(selectedSession) ? "yellow" : undefined
+              }
+              disabled={!selectedSession || starLoading}
+              size="sm"
+              radius="md"
+              style={{ fontWeight: 600, fontSize: 14 }}
+              onClick={toggleStar}
+            >
+              {starredSessions.includes(selectedSession) ? "Unstar" : "Star"}
+            </Button>
+          </Button.Group>
+        </Group>
+      </Container>
       {sessions.length === 0 ? (
         <Paper shadow="sm" p="xl" className={styles.chartPaper}>
           <div style={{ textAlign: "center", fontSize: 18, color: "#888" }}>
