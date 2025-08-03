@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureDir, getAllSessions, atomicWriteFileSync } from "../helpers";
+import {
+  ensureDir,
+  getAllSessions,
+  atomicWriteFileSync,
+  findSessionFileById,
+} from "../helpers";
 import fs from "fs";
 import path from "path";
 
@@ -22,44 +27,27 @@ export async function POST(req: NextRequest) {
   }
 
   ensureDir();
-  // Get next incrementing sequence number
-  const files = getAllSessions();
-  const sequences = files
-    .map((f) => f.sequence)
-    .filter((n) => Number.isFinite(n));
-  const nextSequence = sequences.length ? Math.max(...sequences) + 1 : 1;
-  // Get current date in yyyy-mm-dd
-  const now = new Date();
-  const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, "0");
-  const dd = String(now.getDate()).padStart(2, "0");
-  const dateStr = `${yyyy}-${mm}-${dd}`;
-  // Get time in 12-hour format with am/pm
-  let hours = now.getHours();
-  const minutes = String(now.getMinutes()).padStart(2, "0");
-  const ampm = hours >= 12 ? "pm" : "am";
-  hours = hours % 12;
-  if (hours === 0) hours = 12;
-  const timeStr = `${hours}-${minutes}${ampm}`;
-  // Filename: sequence yyyy-mm-dd h-mm(am|pm) id.csv
-  const fileName = `${nextSequence} ${dateStr} ${timeStr} ${id}.csv`;
+
+  // Try find existing session file by id, if not found, create a new one
+  let fileName =
+    findSessionFileById(id)?.fileName ?? getNextSessionFileName(id);
   const filePath = path.join(DATA_DIR, fileName);
 
   // Prepare CSV header if new file
-  const header = [
-    "timestamp",
-    ...Array.from({ length: 12 }, (_, i) => `temp${i + 1}`),
-    "pumpVoltage",
-    "pumpCurrent",
-    "pumpPower",
-    "flowSensorCurrent",
-  ].join(",");
-
   if (!fs.existsSync(filePath)) {
+    const header = [
+      "timestamp",
+      ...Array.from({ length: 12 }, (_, i) => `temp${i + 1}`),
+      "pumpVoltage",
+      "pumpCurrent",
+      "pumpPower",
+      "flowSensorCurrent",
+    ].join(",");
+
     atomicWriteFileSync(filePath, header + "\n", "utf8");
   }
 
-  // Write values
+  // Write new values
   for (const v of values) {
     const row = [
       v.timestamp ?? "",
@@ -71,8 +59,36 @@ export async function POST(req: NextRequest) {
       v.pumpPower ?? "",
       v.flowSensorCurrent ?? "",
     ].join(",");
+
+    // Appending is atomic if the written data is small enough
     fs.appendFileSync(filePath, row + "\n", "utf8");
   }
 
   return NextResponse.json({ fileName });
+}
+
+function getNextSessionFileName(id: string): string {
+  const files = getAllSessions();
+  const sequences = files
+    .map((f) => f.sequence)
+    .filter((n) => Number.isFinite(n));
+  const nextSequence = sequences.length ? Math.max(...sequences) + 1 : 1;
+
+  // Get current date in yyyy-mm-dd
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  const dateStr = `${yyyy}-${mm}-${dd}`;
+
+  // Get time in 12-hour format with am/pm
+  let hours = now.getHours();
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+  const ampm = hours >= 12 ? "pm" : "am";
+  hours = hours % 12;
+  if (hours === 0) hours = 12;
+  const timeStr = `${hours}-${minutes}${ampm}`;
+
+  // Filename: sequence yyyy-mm-dd h-mm(am|pm) id.csv
+  return `${nextSequence} ${dateStr} ${timeStr} ${id}.csv`;
 }
