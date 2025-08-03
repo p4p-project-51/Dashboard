@@ -30,7 +30,7 @@ export default function MultiProbeChart() {
   const [data, setData] = useState<ProbeData[]>([]);
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [selectedSession, setSelectedSession] = useState<string>("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const chartWidth = 900;
 
   useEffect(() => {
