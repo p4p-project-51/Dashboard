@@ -23,16 +23,26 @@ function parseCsv(filePath: string) {
   });
 }
 
+function findFileById(id: string) {
+  const files = fs
+    .readdirSync(DATA_DIR)
+    .filter((f) =>
+      /^\d+ \d{4}-\d{2}-\d{2} \d{1,2}-\d{2}(am|pm) [a-zA-Z0-9]{7}\.csv$/.test(f)
+    );
+  return files.find((f) => f.endsWith(` ${id}.csv`));
+}
+
 export async function GET(
   request: Request,
   { params }: { params: { sessionId: string } }
 ) {
-  // sessionId is now the full filename
-  const fileName = params.sessionId;
-  const filePath = path.join(DATA_DIR, fileName);
-  if (!fs.existsSync(filePath)) {
+  // sessionId is now the RNG id
+  const id = params.sessionId;
+  const fileName = findFileById(id);
+  if (!fileName) {
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
+  const filePath = path.join(DATA_DIR, fileName);
   const data = parseCsv(filePath);
   return NextResponse.json(data);
 }

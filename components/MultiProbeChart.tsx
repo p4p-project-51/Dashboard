@@ -14,11 +14,12 @@ import {
 } from "@mantine/core";
 
 export type SessionInfo = {
-  id: string;
+  id: string; // RNG id
+  sequence: string; // sequence number
   startTimestamp: number;
   fileName: string;
   date: string;
-  sessionId: string;
+  time: string;
 };
 export type ProbeData = {
   timestamp: number;
@@ -41,8 +42,9 @@ export default function MultiProbeChart() {
     fetch("/api/probe-data/sessions")
       .then((res) => res.json())
       .then((sessionList: SessionInfo[]) => {
-        setSessions(sessionList);
         setSelectedSession(sessionList[0]?.id || "");
+        setSessions(sessionList.reverse());
+        console.log("Sessions loaded:", sessionList);
       });
   }, []);
 
@@ -375,11 +377,10 @@ export default function MultiProbeChart() {
           label="Session"
           placeholder="Select session"
           data={sessions
-            .slice()
-            .sort((a, b) => b.startTimestamp - a.startTimestamp)
+            .sort((a, b) => parseInt(b.sequence) - parseInt(a.sequence))
             .map((session) => ({
-              value: session.fileName || session.id,
-              label: session.fileName || session.id,
+              value: session.id,
+              label: session.fileName,
             }))}
           value={selectedSession}
           onChange={(value) => setSelectedSession(value || "")}
