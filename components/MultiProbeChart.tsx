@@ -19,6 +19,7 @@ import {
   RangeSlider,
   Group,
   Container,
+  useMantineColorScheme,
 } from "@mantine/core";
 
 export type SessionInfo = {
@@ -43,6 +44,9 @@ export type DynamicProbeData = Record<string, number | null> & {
 };
 
 export default function MultiProbeChart() {
+  const { colorScheme } = useMantineColorScheme();
+  const isDarkMode = colorScheme === "dark";
+
   const [data, setData] = useState<DynamicProbeData[]>([]);
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [selectedSession, setSelectedSession] = useState<string>("");
@@ -198,6 +202,11 @@ export default function MultiProbeChart() {
     return rawValue.toFixed(2);
   }
 
+  const gridColor = isDarkMode ? "#222" : "#ccc";
+  const labelColor = isDarkMode ? "#fff" : "#222";
+  const lineColor = (hue: number) =>
+    isDarkMode ? `hsl(${hue}, 55%, 60%)` : `hsl(${hue}, 65%, 60%)`;
+
   // Temperature chart config
   const tempSeriesConfig = useMemo(() => {
     return [
@@ -206,13 +215,29 @@ export default function MultiProbeChart() {
         const hue = hashString(header) % 360;
         return {
           label: header,
-          stroke: `hsl(${hue}, 60%, 60%)`,
+          stroke: lineColor(hue),
           value: (_self: unknown, v: number) =>
             v == null || isNaN(v) ? "--.--°C" : `${v.toFixed(2)}°C`,
         };
       }),
     ];
-  }, [tempHeaders]);
+  }, [tempHeaders, isDarkMode]);
+
+  // Metrics chart config
+  const metricsSeriesConfig = useMemo(() => {
+    return [
+      { label: "Time (s)", value: formatTime },
+      ...metricHeaders.map((header) => {
+        const hue = hashString(header) % 360;
+        return {
+          label: header,
+          stroke: lineColor(hue),
+          value: (_self: unknown, v: number) =>
+            v == null || isNaN(v) ? "--.--°C" : `${v.toFixed(2)}`,
+        };
+      }),
+    ];
+  }, [metricHeaders, isDarkMode]);
   const tempOpts = useMemo(
     () => ({
       width: chartWidth,
@@ -235,17 +260,21 @@ export default function MultiProbeChart() {
       series: tempSeriesConfig,
       axes: [
         {
-          grid: { show: true },
+          grid: { show: true, stroke: gridColor },
           values: (self: unknown, ticks: number[]) =>
             ticks.map((t) => formatTime(self, t)),
           size: 60,
           label: "Time (s)",
+          font: "14px sans-serif",
+          stroke: labelColor,
         },
         {
-          grid: { show: true },
+          grid: { show: true, stroke: gridColor },
           values: (self: unknown, ticks: number[]) =>
             ticks.map((t) => formatValue(t)),
           size: 60,
+          font: "14px sans-serif",
+          stroke: labelColor,
         },
       ],
       legend: { show: true },
@@ -309,24 +338,9 @@ export default function MultiProbeChart() {
       },
       select: { show: true, over: true, left: 0, top: 0, width: 0, height: 0 },
     }),
-    [xZoom, tempYZoom, chartWidth]
+    [xZoom, tempYZoom, chartWidth, gridColor, labelColor]
   );
 
-  // Metrics chart config
-  const metricsSeriesConfig = useMemo(() => {
-    return [
-      { label: "Time (s)", value: formatTime },
-      ...metricHeaders.map((header) => {
-        const hue = hashString(header) % 360;
-        return {
-          label: header,
-          stroke: `hsl(${hue}, 60%, 60%)`,
-          value: (_self: unknown, v: number) =>
-            v == null || isNaN(v) ? "--.--°C" : `${v.toFixed(2)}`,
-        };
-      }),
-    ];
-  }, [metricHeaders]);
   const metricsOpts = useMemo(
     () => ({
       width: chartWidth,
@@ -349,17 +363,21 @@ export default function MultiProbeChart() {
       series: metricsSeriesConfig,
       axes: [
         {
-          grid: { show: true },
+          grid: { show: true, stroke: gridColor },
           values: (self: unknown, ticks: number[]) =>
             ticks.map((t) => formatTime(self, t)),
           size: 60,
           label: "Time (s)",
+          font: "14px sans-serif",
+          stroke: labelColor,
         },
         {
-          grid: { show: true },
+          grid: { show: true, stroke: gridColor },
           values: (self: unknown, ticks: number[]) =>
             ticks.map((t) => formatValue(t)),
           size: 60,
+          font: "14px sans-serif",
+          stroke: labelColor,
         },
       ],
       legend: { show: true },
@@ -425,7 +443,7 @@ export default function MultiProbeChart() {
       },
       select: { show: true, over: true, left: 0, top: 0, width: 0, height: 0 },
     }),
-    [xZoom, metricsYZoom, chartWidth]
+    [xZoom, metricsYZoom, chartWidth, gridColor, labelColor]
   );
 
   // Refs to uPlot instances for cursor sync
@@ -567,7 +585,7 @@ export default function MultiProbeChart() {
       </Container>
       {sessions.length === 0 ? (
         <Paper shadow="sm" p="xl" className={styles.chartPaper}>
-          <div style={{ textAlign: "center", fontSize: 18, color: "#888" }}>
+          <div style={{ textAlign: "center", fontSize: 18 }}>
             No sessions available.
             <br />
             Please upload data to begin.
