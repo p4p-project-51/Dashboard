@@ -1,13 +1,39 @@
 import { NextResponse } from "next/server";
+import fs from "fs";
+import path from "path";
 
-const now = Date.now();
-const SESSION_IDS = [
-  { id: "A", startTimestamp: now - 60 * 60 * 1000 }, // 1 hour ago
-  { id: "B", startTimestamp: now - 30 * 60 * 1000 }, // 30 min ago
-  { id: "C", startTimestamp: now }, // now
-];
+const DATA_DIR = path.resolve(process.cwd(), "data/sessions");
+
+function getSessionFiles() {
+  if (!fs.existsSync(DATA_DIR)) return [];
+  return fs
+    .readdirSync(DATA_DIR)
+    .filter((f) => /^\d+-\d{8}-[a-zA-Z0-9]{7}\.csv$/.test(f));
+}
+
+function getStartTimestamp(filePath: string) {
+  const lines = fs.readFileSync(filePath, "utf8").split("\n");
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (line) {
+      const [ts] = line.split(",");
+      const numTs = Number(ts);
+      if (!isNaN(numTs) && ts !== "") return numTs;
+    }
+  }
+  return null;
+}
 
 export async function GET() {
-  // Return the list of available sessions with start timestamps
-  return NextResponse.json(SESSION_IDS);
+  const files = getSessionFiles();
+  const sessions = files
+    .map((f) => {
+      const [id, date, sessionIdWithExt] = f.split("-");
+      const sessionId = sessionIdWithExt.replace(/\.csv$/, "");
+      const filePath = path.join(DATA_DIR, f);
+      const startTimestamp = getStartTimestamp(filePath);
+      return { id, startTimestamp, sessionId, date, fileName: f };
+    })
+    .filter((s) => s.startTimestamp !== null && s.startTimestamp !== undefined);
+  return NextResponse.json(sessions);
 }

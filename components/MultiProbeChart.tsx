@@ -16,6 +16,9 @@ import {
 export type SessionInfo = {
   id: string;
   startTimestamp: number;
+  fileName: string;
+  date: string;
+  sessionId: string;
 };
 export type ProbeData = {
   timestamp: number;
@@ -49,8 +52,18 @@ export default function MultiProbeChart() {
     fetch(`/api/probe-data/${encodeURIComponent(selectedSession)}`)
       .then((res) => res.json())
       .then((newData) => {
-        setData(newData);
-        setZoom(null); // Reset zoom only after new data is loaded
+        // Fallback if error response
+        if (Array.isArray(newData)) {
+          setData(newData);
+        } else {
+          setData([]);
+        }
+        // Reset zoom only after new data is loaded
+        setZoom(null);
+        setLoading(false);
+      })
+      .catch(() => {
+        setData([]);
         setLoading(false);
       });
   }, [selectedSession]);
@@ -365,10 +378,8 @@ export default function MultiProbeChart() {
             .slice()
             .sort((a, b) => b.startTimestamp - a.startTimestamp)
             .map((session) => ({
-              value: session.id,
-              label: `${session.id} (${new Date(
-                session.startTimestamp
-              ).toLocaleString()})`,
+              value: session.fileName || session.id,
+              label: session.fileName || session.id,
             }))}
           value={selectedSession}
           onChange={(value) => setSelectedSession(value || "")}
@@ -378,80 +389,96 @@ export default function MultiProbeChart() {
             label: { fontWeight: 600, fontSize: 14 },
             input: { fontSize: 14, borderRadius: 4 },
           }}
+          disabled={sessions.length === 0}
         />
       </div>
-      <Paper shadow="sm" p="xl" className={styles.chartPaper}>
-        <LoadingOverlay
-          visible={loading}
-          zIndex={1000}
-          overlayProps={{ radius: "sm", blur: 2 }}
-        />
-        <UplotReact
-          options={tempOpts}
-          data={tempChartData}
-          onCreate={(chart) => {
-            tempPlotRef.current = chart;
-          }}
-        />
-      </Paper>
-      <Paper
-        mb={24}
-        w="100%"
-        radius={8}
-        shadow="xs"
-        p={8}
-        className={styles.metricsPaper}
-      >
-        <div className={styles.tip}>
-          <b>Tip:</b> Drag along one axis of the graph to zoom that axis or drag
-          diagonally to zoom into a rectangle. Double-click to reset zoom.
-        </div>
-        <div className={styles.rangeSliderContainer}>
-          <RangeSlider
-            min={minX}
-            max={maxX}
-            step={(maxX - minX) / 500 || 0.01}
-            value={brush ?? [minX, maxX]}
-            onChange={(vals: [number, number]) => {
-              handleBrushChange([Number(vals[0]), Number(vals[1])]);
-            }}
-            marks={[
-              { value: minX, label: formatTime(null, minX) },
-              { value: maxX, label: formatTime(null, maxX) },
-            ]}
-            size="lg"
-            radius="md"
-            label={(value) => formatTime(null, value)}
-          />
-        </div>
-        <div className={styles.resetZoomRow}>
-          <Button
-            variant="default"
-            radius="md"
-            size="sm"
-            leftSection={<IconZoom />}
-            onClick={() => setZoom(null)}
-            aria-label="Reset Zoom"
-            style={{ fontWeight: 600, fontSize: 12 }}
+      {sessions.length === 0 ? (
+        <Paper shadow="sm" p="xl" className={styles.chartPaper}>
+          <div style={{ textAlign: "center", fontSize: 18, color: "#888" }}>
+            No sessions available.
+            <br />
+            Please upload data to begin.
+          </div>
+        </Paper>
+      ) : (
+        <>
+          <Paper shadow="sm" p="xl" className={styles.chartPaper}>
+            <LoadingOverlay
+              visible={loading}
+              zIndex={1000}
+              overlayProps={{ radius: "sm", blur: 2 }}
+            />
+            <UplotReact
+              options={tempOpts}
+              data={tempChartData}
+              onCreate={(chart) => {
+                tempPlotRef.current = chart;
+              }}
+            />
+          </Paper>
+          <Paper
+            mb={24}
+            w="100%"
+            radius={8}
+            shadow="xs"
+            p={8}
+            className={styles.metricsPaper}
           >
-            Reset Zoom
-          </Button>
-        </div>
-      </Paper>
-      <Paper shadow="sm" p="xl" className={styles.chartPaper}>
-        <LoadingOverlay
-          visible={loading}
-          zIndex={1000}
-          overlayProps={{ radius: "sm", blur: 2 }}
-        />
-        <UplotReact
-          options={metricsOpts}
-          data={metricsChartData}
-          onCreate={(chart) => {
-            metricsPlotRef.current = chart;
-          }}
-        />
-      </Paper>
+            <div className={styles.tip}>
+              <b>Tip:</b> Drag along one axis of the graph to zoom that axis or
+              drag diagonally to zoom into a rectangle. Double-click to reset
+              zoom.
+            </div>
+            <div className={styles.rangeSliderContainer}>
+              <RangeSlider
+                min={minX}
+                max={maxX}
+                step={(maxX - minX) / 500 || 0.01}
+                value={brush ?? [minX, maxX]}
+                onChange={(vals: [number, number]) => {
+                  handleBrushChange([Number(vals[0]), Number(vals[1])]);
+                }}
+                marks={[
+                  { value: minX, label: formatTime(null, minX) },
+                  { value: maxX, label: formatTime(null, maxX) },
+                ]}
+                size="lg"
+                radius="md"
+                label={(value) => formatTime(null, value)}
+                disabled={sessions.length === 0}
+              />
+            </div>
+            <div className={styles.resetZoomRow}>
+              <Button
+                variant="default"
+                radius="md"
+                size="sm"
+                leftSection={<IconZoom />}
+                onClick={() => setZoom(null)}
+                aria-label="Reset Zoom"
+                style={{ fontWeight: 600, fontSize: 12 }}
+                disabled={sessions.length === 0}
+              >
+                Reset Zoom
+              </Button>
+            </div>
+          </Paper>
+          <Paper shadow="sm" p="xl" className={styles.chartPaper}>
+            <LoadingOverlay
+              visible={loading}
+              zIndex={1000}
+              overlayProps={{ radius: "sm", blur: 2 }}
+            />
+            <UplotReact
+              options={metricsOpts}
+              data={metricsChartData}
+              onCreate={(chart) => {
+                metricsPlotRef.current = chart;
+              }}
+            />
+          </Paper>
+        </>
+      )}
     </div>
   );
 }

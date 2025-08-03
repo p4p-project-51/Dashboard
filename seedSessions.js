@@ -1,0 +1,86 @@
+// Usage: node seedSessions.js
+// This script seeds random probe data to /api/probe-data/upload
+
+function randomSessionId() {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let id = '';
+  for (let i = 0; i < 7; i++) {
+    id += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return id;
+}
+
+function smoothArray(arr, windowSize) {
+  const result = [];
+  for (let i = 0; i < arr.length; i++) {
+    let sum = 0;
+    let count = 0;
+    for (
+      let j = Math.max(0, i - Math.floor(windowSize / 2));
+      j <= Math.min(arr.length - 1, i + Math.floor(windowSize / 2));
+      j++
+    ) {
+      sum += arr[j];
+      count++;
+    }
+    result.push(sum / count);
+  }
+  return result;
+}
+
+function makeSessionData(sessionSeed, n = 100) {
+  let seed = sessionSeed;
+  function seededRandom() {
+    seed = (seed * 9301 + 49297) % 233280;
+    return seed / 233280;
+  }
+  function seededRandomFloat(min, max) {
+    return seededRandom() * (max - min) + min;
+  }
+
+  const data = Array.from({ length: n }, (_, i) => {
+    const timestamp = i * 1000;
+    const entry = {
+      timestamp,
+      temperatures: Array.from({ length: 12 }, () => seededRandomFloat(25, 70)),
+      pumpVoltage: seededRandomFloat(0.1, 2),
+      pumpCurrent: seededRandomFloat(0.5, 15),
+      flowSensorCurrent: seededRandomFloat(0, 0.2),
+    };
+    return {
+      ...entry,
+      pumpPower: entry.pumpVoltage * entry.pumpCurrent,
+    };
+  });
+
+  // Smooth each temperature probe
+  const windowSize = 7;
+  for (let probeIdx = 0; probeIdx < 12; probeIdx++) {
+    const probeTemps = data.map((d) => d.temperatures[probeIdx]);
+    const smoothed = smoothArray(probeTemps, windowSize);
+    for (let i = 0; i < data.length; i++) {
+      data[i].temperatures[probeIdx] = smoothed[i];
+    }
+  }
+  return data;
+}
+
+async function seedSession(sessionSeed) {
+  const sessionId = randomSessionId();
+  const values = makeSessionData(sessionSeed);
+  const res = await fetch('http://localhost:3000/api/probe-data/upload', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionId, values })
+  });
+  const json = await res.json();
+  console.log(`Seeded session file: ${json.fileName}`);
+}
+
+async function main() {
+  await seedSession(123); // 1st session
+  await seedSession(456); // 2nd session
+  await seedSession(789); // 3rd session
+}
+
+main();
