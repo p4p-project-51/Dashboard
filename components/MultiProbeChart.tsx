@@ -475,6 +475,7 @@ export default function MultiProbeChart() {
                   setSessions(sessionList);
                 });
             }}
+            allowDeselect={false}
             disabled={sessions.length === 0}
             size="sm"
             styles={{
