@@ -74,26 +74,16 @@ export function getSessionFileContentById(id: string) {
 
 export function parseSessionFileContent(content: string) {
   const lines = content.trim().split("\n");
-  if (lines.length < 2) return [];
+  if (lines.length < 2) return { header: [], rows: [] };
 
   const header = lines[0].split(",");
-
-  return lines.slice(1).map((line) => {
-    const values = line.split(",");
-    const obj: Record<string, string> = {};
-
-    header.forEach((key, i) => {
-      obj[key] = values[i] ?? "";
-    });
-
-    return obj;
-  });
+  const rows = lines.slice(1).map((line) => line.split(","));
+  return { header, rows };
 }
 
 export function getParsedSessionById(id: string) {
   const content = getSessionFileContentById(id);
   if (!content) return null;
-
   return parseSessionFileContent(content);
 }
 

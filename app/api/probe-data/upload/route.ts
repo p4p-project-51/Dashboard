@@ -12,10 +12,16 @@ const DATA_DIR = path.resolve(process.cwd(), "data/sessions");
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  let { id, values } = body;
+  let { id, header, values } = body;
   if (!id || typeof id !== "string" || id.length !== 7) {
     return NextResponse.json(
       { error: "Missing or invalid id (must be 7 chars)" },
+      { status: 400 }
+    );
+  }
+  if (!Array.isArray(header) || header.length < 2) {
+    return NextResponse.json(
+      { error: "Missing or invalid header array" },
       { status: 400 }
     );
   }
@@ -35,36 +41,16 @@ export async function POST(req: NextRequest) {
 
   // Prepare CSV header if new file
   if (!fs.existsSync(filePath)) {
-    const header = [
-      "timestamp",
-      ...Array.from({ length: 12 }, (_, i) => `temp${i + 1}`),
-      "pumpVoltage",
-      "pumpCurrent",
-      "pumpPower",
-      "flowSensorCurrent",
-    ].join(",");
-
-    atomicWriteFileSync(filePath, header + "\n", "utf8");
+    atomicWriteFileSync(filePath, header.join(",") + "\n", "utf8");
   }
 
   // Write new values
   for (const v of values) {
-    const row = [
-      v.timestamp ?? "",
-      ...(v.temperatures ?? Array(12).fill("")).map(
-        (t: number | null) => t ?? ""
-      ),
-      v.pumpVoltage ?? "",
-      v.pumpCurrent ?? "",
-      v.pumpPower ?? "",
-      v.flowSensorCurrent ?? "",
-    ].join(",");
-
-    // Appending is atomic if the written data is small enough
+    const row = (v as any[]).map((val: any) => val ?? "").join(",");
     fs.appendFileSync(filePath, row + "\n", "utf8");
   }
 
-  return NextResponse.json({ fileName });
+  return NextResponse.json({ fileName, header, values });
 }
 
 function getNextSessionFileName(id: string): string {

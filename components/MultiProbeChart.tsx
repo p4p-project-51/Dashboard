@@ -38,13 +38,19 @@ export type ProbeData = {
   flowSensorCurrent: number;
 };
 
+export type DynamicProbeData = Record<string, number | null> & {
+  timestamp: number;
+};
+
 export default function MultiProbeChart() {
-  const [data, setData] = useState<ProbeData[]>([]);
+  const [data, setData] = useState<DynamicProbeData[]>([]);
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [selectedSession, setSelectedSession] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [starredSessions, setStarredSessions] = useState<string[]>([]);
   const [starLoading, setStarLoading] = useState(false);
+  const [tempHeaders, setTempHeaders] = useState<string[]>([]);
+  const [metricHeaders, setMetricHeaders] = useState<string[]>([]);
   const chartWidth = 900;
 
   useEffect(() => {
@@ -63,21 +69,57 @@ export default function MultiProbeChart() {
     setLoading(true);
     fetch(`/api/probe-data/${encodeURIComponent(selectedSession)}`)
       .then((res) => res.json())
-      .then((newData) => {
-        // Fallback if error response
-        if (Array.isArray(newData)) {
-          setData(newData);
+      .then(({ header, rows }) => {
+        if (
+          Array.isArray(rows) &&
+          Array.isArray(header) &&
+          rows.length > 0 &&
+          header.length > 0
+        ) {
+          const tempHeaders = header.filter((h) => h.startsWith("Temperature"));
+          const metricHeaders = header.filter(
+            (h) => !h.startsWith("Temperature") && h !== "Timestamp (ms)"
+          );
+
+          const parsedData = rows.map((row) => {
+            const obj: DynamicProbeData = { timestamp: Number(row[0]) }; // Parse timestamp correctly
+            header.forEach((key, index) => {
+              if (key !== "Timestamp (ms)") {
+                obj[key] = parseFloat(row[index]) || null;
+              }
+            });
+            return obj;
+          });
+
+          setData(parsedData);
+          setTempHeaders(tempHeaders);
+          setMetricHeaders(metricHeaders);
+
+          // Initialize zoom state
+          const timestamps = parsedData.map((d) => d.timestamp);
+          const minX = timestamps.length > 0 ? Math.min(...timestamps) : 0;
+          const maxX = timestamps.length > 0 ? Math.max(...timestamps) : 1;
+          setXZoom([minX, maxX]);
+          setBrush([minX, maxX]);
         } else {
           setData([]);
+          setTempHeaders([]);
+          setMetricHeaders([]);
+          setXZoom(null);
+          setBrush(null);
         }
-        // Reset zoom only after new data is loaded
-        setXZoom(null);
         setTempYZoom(null);
         setMetricsYZoom(null);
         setLoading(false);
       })
       .catch(() => {
         setData([]);
+        setTempHeaders([]);
+        setMetricHeaders([]);
+        setXZoom(null);
+        setBrush(null);
+        setTempYZoom(null);
+        setMetricsYZoom(null);
         setLoading(false);
       });
   }, [selectedSession]);
@@ -91,22 +133,19 @@ export default function MultiProbeChart() {
 
   // Prepare chart data
   const x = useMemo(() => data.map((d) => d.timestamp), [data]);
-  const tempSeries = useMemo(
-    () =>
-      Array.from({ length: 12 }, (_, i) =>
-        data.map((d) => d.temperatures[i] ?? NaN)
-      ),
-    [data]
-  );
-  const pumpVoltage = useMemo(() => data.map((d) => d.pumpVoltage), [data]);
-  const pumpCurrent = useMemo(() => data.map((d) => d.pumpCurrent), [data]);
-  const pumpPower = useMemo(() => data.map((d) => d.pumpPower), [data]);
-  const flowSensorCurrent = useMemo(
-    () => data.map((d) => d.flowSensorCurrent),
-    [data]
-  );
 
-  // Convert chart data to Float64Array for uPlot
+  const tempSeries = useMemo(() => {
+    return tempHeaders.map((header) =>
+      data.map((d) => (d[header] as number) ?? NaN)
+    );
+  }, [data, tempHeaders]);
+
+  const metricSeries = useMemo(() => {
+    return metricHeaders.map((header) =>
+      data.map((d) => (d[header] as number) ?? NaN)
+    );
+  }, [data, metricHeaders]);
+
   const tempChartData = useMemo(
     () => [
       Float64Array.from(x),
@@ -114,15 +153,13 @@ export default function MultiProbeChart() {
     ],
     [x, tempSeries]
   );
+
   const metricsChartData = useMemo(
     () => [
       Float64Array.from(x),
-      Float64Array.from(pumpVoltage),
-      Float64Array.from(pumpCurrent),
-      Float64Array.from(pumpPower),
-      Float64Array.from(flowSensorCurrent),
+      ...metricSeries.map((arr) => Float64Array.from(arr)),
     ],
-    [x, pumpVoltage, pumpCurrent, pumpPower, flowSensorCurrent]
+    [x, metricSeries]
   );
 
   // Shared zoom state for both charts (xMin, xMax)
@@ -162,15 +199,17 @@ export default function MultiProbeChart() {
   }
 
   // Temperature chart config
-  const tempSeriesConfig = [
-    { label: "Time (s)", value: formatTime },
-    ...Array.from({ length: 12 }, (_, i) => ({
-      label: `Temp ${i + 1} (°C)`,
-      stroke: `hsl(${(i * 30) % 360}, 70%, 50%)`,
-      value: (_self: unknown, v: number) =>
-        v == null || isNaN(v) ? "--" : `${v.toFixed(2)}°C`,
-    })),
-  ];
+  const tempSeriesConfig = useMemo(() => {
+    return [
+      { label: "Time (s)", value: formatTime },
+      ...tempHeaders.map((header, i) => ({
+        label: header,
+        stroke: `hsl(${(i * 30) % 360}, 70%, 50%)`,
+        value: (_self: unknown, v: number) =>
+          v == null || isNaN(v) ? "--" : `${v.toFixed(2)}°C`,
+      })),
+    ];
+  }, [tempHeaders]);
   const tempOpts = useMemo(
     () => ({
       width: chartWidth,
@@ -273,33 +312,17 @@ export default function MultiProbeChart() {
   );
 
   // Metrics chart config
-  const metricsSeriesConfig = [
-    { label: "Time (s)", value: formatTime },
-    {
-      label: "Pump Voltage (V)",
-      stroke: "#0074D9",
-      value: (_self: unknown, v: number) =>
-        v == null || isNaN(v) ? "--" : `${v.toFixed(2)}V`,
-    },
-    {
-      label: "Pump Current (A)",
-      stroke: "#2ECC40",
-      value: (_self: unknown, v: number) =>
-        v == null || isNaN(v) ? "--" : `${v.toFixed(2)}A`,
-    },
-    {
-      label: "Pump Power (W)",
-      stroke: "#FF4136",
-      value: (_self: unknown, v: number) =>
-        v == null || isNaN(v) ? "--" : `${v.toFixed(2)}W`,
-    },
-    {
-      label: "Flow Sensor Current (A)",
-      stroke: "#B10DC9",
-      value: (_self: unknown, v: number) =>
-        v == null || isNaN(v) ? "--" : `${v.toFixed(2)}A`,
-    },
-  ];
+  const metricsSeriesConfig = useMemo(() => {
+    return [
+      { label: "Time (s)", value: formatTime },
+      ...metricHeaders.map((header, i) => ({
+        label: header,
+        stroke: `hsl(${(i * 30) % 360}, 70%, 50%)`,
+        value: (_self: unknown, v: number) =>
+          v == null || isNaN(v) ? "--" : `${v.toFixed(2)}`,
+      })),
+    ];
+  }, [metricHeaders]);
   const metricsOpts = useMemo(
     () => ({
       width: chartWidth,
