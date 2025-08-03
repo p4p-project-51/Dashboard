@@ -383,6 +383,13 @@ export default function MultiProbeChart() {
             }))}
           value={selectedSession}
           onChange={(value) => setSelectedSession(value || "")}
+          onDropdownOpen={() => {
+            fetch("/api/probe-data/sessions")
+              .then((res) => res.json())
+              .then((sessionList: SessionInfo[]) => {
+                setSessions(sessionList);
+              });
+          }}
           size="sm"
           radius="md"
           styles={{
