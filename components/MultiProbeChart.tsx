@@ -477,20 +477,18 @@ export default function MultiProbeChart() {
             }}
             disabled={sessions.length === 0}
             size="sm"
-            radius="md"
             styles={{
               label: { fontWeight: 600, fontSize: 14 },
               input: { fontSize: 14, borderRadius: 4 },
             }}
             style={{ minWidth: 320 }}
           />
-          <Button.Group>
+          <Group justify="center">
             <Button
               variant="light"
               leftSection={<IconDownload />}
               disabled={!selectedSession}
               size="sm"
-              radius="md"
               style={{ fontWeight: 600, fontSize: 14 }}
               onClick={() => {
                 if (!selectedSession) return;
@@ -512,7 +510,6 @@ export default function MultiProbeChart() {
               leftSection={<IconReload />}
               disabled={!selectedSession || loading}
               size="sm"
-              radius="md"
               style={{ fontWeight: 600, fontSize: 14 }}
               onClick={reloadGraph}
             >
@@ -534,13 +531,12 @@ export default function MultiProbeChart() {
               }
               disabled={!selectedSession || starLoading}
               size="sm"
-              radius="md"
               style={{ fontWeight: 600, fontSize: 14 }}
               onClick={toggleStar}
             >
               {starredSessions.includes(selectedSession) ? "Unstar" : "Star"}
             </Button>
-          </Button.Group>
+          </Group>
         </Group>
       </Container>
       {sessions.length === 0 ? (
@@ -594,7 +590,6 @@ export default function MultiProbeChart() {
                   { value: maxX, label: formatTime(null, maxX) },
                 ]}
                 size="lg"
-                radius="md"
                 label={(value) => formatTime(null, value)}
                 disabled={sessions.length === 0}
               />
@@ -602,7 +597,6 @@ export default function MultiProbeChart() {
             <div className={styles.resetZoomRow}>
               <Button
                 variant="default"
-                radius="md"
                 size="sm"
                 leftSection={<IconZoom />}
                 onClick={() => {
