@@ -1,0 +1,51 @@
+.header {
+  height: 72px;
+  margin-bottom: 120px;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(12px);
+  transition: background 0.3s, box-shadow 0.3s;
+  box-shadow: none;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+[data-mantine-color-scheme="dark"] .header {
+  background: rgba(30, 32, 36, 0.8);
+}
+
+.inner {
+  height: 72px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.link {
+  display: block;
+  line-height: 1;
+  padding: 16px 24px;
+  border-radius: var(--mantine-radius-md);
+  text-decoration: none;
+  color: var(--mantine-color-gray-7);
+  font-size: 1.25rem;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+[data-mantine-color-scheme="dark"] .link {
+  color: var(--mantine-color-dark-0);
+}
+
+.link:hover {
+  background-color: var(--mantine-color-gray-0);
+}
+
+[data-mantine-color-scheme="dark"] .link:hover {
+  background-color: var(--mantine-color-dark-6);
+}
+
+[data-mantine-color-scheme] .link[data-active] {
+  background-color: var(--mantine-color-blue-filled);
+  color: var(--mantine-color-white);
+}

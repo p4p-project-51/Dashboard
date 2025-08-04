@@ -9,6 +9,7 @@ import "@mantine/core/styles.css";
 import { shadcnCssVariableResolver } from "../cssVariableResolver";
 import { shadcnTheme } from "../theme";
 import "../style.css";
+import { Header } from "../components/Header/Header";
 
 export const metadata = {
   title: "Mantine Next.js template",
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: { children: any }) {
           theme={shadcnTheme}
           cssVariablesResolver={shadcnCssVariableResolver}
         >
+          <Header />
           {children}
         </MantineProvider>
       </body>
