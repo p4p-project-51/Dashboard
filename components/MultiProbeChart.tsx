@@ -4,6 +4,7 @@ import React, { useEffect, useState, useMemo, useRef } from "react";
 import UplotReact from "uplot-react";
 import "uplot/dist/uPlot.min.css";
 import styles from "./MultiProbeChart.module.css";
+import "./MultiProbeChart.css";
 import {
   IconZoom,
   IconDownload,
