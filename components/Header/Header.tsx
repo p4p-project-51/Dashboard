@@ -47,6 +47,7 @@ export function Header() {
             textDecoration: "none",
             color: "inherit",
             fontSize: "1.5rem",
+            fontWeight: 700,
           }}
         >
           Interface
