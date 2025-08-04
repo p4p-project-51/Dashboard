@@ -24,13 +24,9 @@ export function Header() {
       key={link.label}
       component={Link}
       href={link.link}
-      size="lg"
+      size="md"
       variant={pathname === link.link ? "filled" : "subtle"}
       color={pathname === link.link ? "purple" : "gray"}
-      radius="md"
-      px={24}
-      py={16}
-      style={{ fontWeight: 600, fontSize: "1.15rem" }}
     >
       {link.label}
     </Button>
