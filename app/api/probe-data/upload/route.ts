@@ -13,9 +13,9 @@ const DATA_DIR = path.resolve(process.cwd(), "data/sessions");
 export async function POST(req: NextRequest) {
   const body = await req.json();
   let { id, header, values } = body;
-  if (!id || typeof id !== "string" || id.length !== 7) {
+  if (!id || typeof id !== "string") {
     return NextResponse.json(
-      { error: "Missing or invalid id (must be 7 chars)" },
+      { error: "Missing id" },
       { status: 400 }
     );
   }

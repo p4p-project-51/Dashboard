@@ -21,14 +21,14 @@ export function listSessionFiles() {
   return fs
     .readdirSync(DATA_DIR)
     .filter((f) =>
-      /^\d+ \d{4}-\d{2}-\d{2} \d{1,2}-\d{2}(am|pm) [a-zA-Z0-9]{7}\.csv$/.test(f)
+      /^\d+ \d{4}-\d{2}-\d{2} \d{1,2}-\d{2}(am|pm) [a-zA-Z0-9]+\.csv$/.test(f)
     );
 }
 
 export function parseSessionFileName(fileName: string) {
   // Example: 1 2025-08-03 9-46pm iijkQhz.csv
   const match = fileName.match(
-    /^(\d+) (\d{4}-\d{2}-\d{2}) (\d{1,2}-\d{2}(?:am|pm)) ([a-zA-Z0-9]{7})\.csv$/
+    /^(\d+) (\d{4}-\d{2}-\d{2}) (\d{1,2}-\d{2}(?:am|pm)) ([a-zA-Z0-9]+)\.csv$/
   );
   if (!match) return null;
 

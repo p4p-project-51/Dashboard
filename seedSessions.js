@@ -1,12 +1,13 @@
 // Usage: node seedSessions.js
 // This script seeds random probe data to /api/probe-data/upload
+const crypto = require('crypto');
 
-function randomSessionId() {
-    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let id = '';
-    for (let i = 0; i < 7; i++) {
-        id += chars[Math.floor(Math.random() * chars.length)];
-    }
+function randomSessionId(seed = Math.floor(Math.random() * 100000)) {
+    // Hash the seed to create a consistent session ID
+    const hash = crypto.createHash('sha256');
+    hash.update(seed.toString());
+    const id = hash.digest('hex').slice(0, 10);
+
     return id;
 }
 
@@ -49,13 +50,16 @@ function makeSessionData({ tempCount, metricDefs, sessionSeed, n = 100 }) {
     const data = Array.from({ length: n }, (_, i) => {
         const row = [];
         row.push(i * 1000); // Timestamp
+
         // Temperatures
         const temps = Array.from({ length: tempCount }, () => seededRandomFloat(25, 70));
         row.push(...temps);
+
         // Metrics
         for (const m of metricDefs) {
             row.push(seededRandomFloat(m.min, m.max));
         }
+
         return row;
     });
 
@@ -64,15 +68,17 @@ function makeSessionData({ tempCount, metricDefs, sessionSeed, n = 100 }) {
     for (let probeIdx = 0; probeIdx < tempCount; probeIdx++) {
         const probeTemps = data.map((d) => d[1 + probeIdx]);
         const smoothed = smoothArray(probeTemps, windowSize);
+
         for (let i = 0; i < data.length; i++) {
             data[i][1 + probeIdx] = smoothed[i];
         }
     }
+
     return { header, data };
 }
 
 async function seedSession({ tempCount, metricDefs, sessionSeed }) {
-    const id = randomSessionId();
+    const id = randomSessionId(sessionSeed);
     const { header, data } = makeSessionData({ tempCount, metricDefs, sessionSeed });
     const res = await fetch('http://localhost:3000/api/probe-data/upload', {
         method: 'POST',
@@ -84,6 +90,8 @@ async function seedSession({ tempCount, metricDefs, sessionSeed }) {
 }
 
 async function main() {
+    const seed = Math.floor(Math.random() * 100000);
+
     await seedSession({
         tempCount: 12,
         metricDefs: [
@@ -92,16 +100,29 @@ async function main() {
             { name: 'Pump Power', unit: 'W', min: 0.1, max: 30 },
             { name: 'Flow Sensor Voltage', unit: 'V', min: 0, max: 0.2 }
         ],
-        sessionSeed: 123
+        sessionSeed: seed
     });
+
+    await seedSession({
+        tempCount: 12,
+        metricDefs: [
+            { name: 'Pump Voltage', unit: 'V', min: 0.1, max: 2 },
+            { name: 'Pump Current', unit: 'A', min: 0.5, max: 15 },
+            { name: 'Pump Power', unit: 'W', min: 0.1, max: 30 },
+            { name: 'Flow Sensor Voltage', unit: 'V', min: 0, max: 0.2 }
+        ],
+        sessionSeed: seed
+    });
+
     await seedSession({
         tempCount: 8,
         metricDefs: [
             { name: 'Pump Voltage', unit: 'V', min: 0.1, max: 2 },
             { name: 'Pump Power', unit: 'W', min: 0.1, max: 30 }
         ],
-        sessionSeed: 456
+        sessionSeed: Math.floor(Math.random() * 100000)
     });
+
     await seedSession({
         tempCount: 16,
         metricDefs: [
@@ -109,7 +130,7 @@ async function main() {
             { name: 'Flow Sensor Voltage', unit: 'V', min: 0, max: 0.2 },
             { name: 'Extra Metric', unit: 'X', min: 10, max: 20 }
         ],
-        sessionSeed: 789
+        sessionSeed: Math.floor(Math.random() * 100000)
     });
 }
 
