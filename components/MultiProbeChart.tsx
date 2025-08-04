@@ -22,6 +22,7 @@ import {
   useMantineColorScheme,
   Stack,
 } from "@mantine/core";
+import { useColorScheme } from "@mantine/hooks";
 
 export type SessionInfo = {
   id: string; // RNG id
@@ -46,7 +47,10 @@ export type DynamicProbeData = Record<string, number | null> & {
 
 export default function MultiProbeChart() {
   const { colorScheme } = useMantineColorScheme();
-  const isDarkMode = colorScheme === "dark";
+  const systemColorScheme = useColorScheme();
+  const isDarkMode =
+    (colorScheme === "auto" && systemColorScheme === "dark") ||
+    colorScheme === "dark";
 
   // Responsive chart width
   const containerRef = useRef<HTMLDivElement>(null);
@@ -584,7 +588,7 @@ export default function MultiProbeChart() {
             disabled={sessions.length === 0}
             size="sm"
             styles={{
-              root: { flexGrow: "1" }
+              root: { flexGrow: "1" },
             }}
           />
           <Group justify="center">
