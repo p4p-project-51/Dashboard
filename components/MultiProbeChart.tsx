@@ -489,19 +489,57 @@ export default function MultiProbeChart() {
     setLoading(true);
     fetch(`/api/probe-data/${encodeURIComponent(selectedSession)}`)
       .then((res) => res.json())
-      .then((newData) => {
-        if (Array.isArray(newData)) {
-          setData(newData);
+      .then(({ header, rows }) => {
+        if (
+          Array.isArray(rows) &&
+          Array.isArray(header) &&
+          rows.length > 0 &&
+          header.length > 0
+        ) {
+          const tempHeaders = header.filter((h) => h.startsWith("Temperature"));
+          const metricHeaders = header.filter(
+            (h) => !h.startsWith("Temperature") && h !== "Timestamp (ms)"
+          );
+
+          const parsedData = rows.map((row) => {
+            const obj: DynamicProbeData = { timestamp: Number(row[0]) };
+            header.forEach((key, index) => {
+              if (key !== "Timestamp (ms)") {
+                obj[key] = parseFloat(row[index]) || null;
+              }
+            });
+            return obj;
+          });
+
+          setData(parsedData);
+          setTempHeaders(tempHeaders);
+          setMetricHeaders(metricHeaders);
+
+          // Initialize zoom state
+          const timestamps = parsedData.map((d) => d.timestamp);
+          const minX = timestamps.length > 0 ? Math.min(...timestamps) : 0;
+          const maxX = timestamps.length > 0 ? Math.max(...timestamps) : 1;
+          setXZoom([minX, maxX]);
+          setBrush([minX, maxX]);
         } else {
           setData([]);
+          setTempHeaders([]);
+          setMetricHeaders([]);
+          setXZoom(null);
+          setBrush(null);
         }
-        setXZoom(null);
         setTempYZoom(null);
         setMetricsYZoom(null);
         setLoading(false);
       })
       .catch(() => {
         setData([]);
+        setTempHeaders([]);
+        setMetricHeaders([]);
+        setXZoom(null);
+        setBrush(null);
+        setTempYZoom(null);
+        setMetricsYZoom(null);
         setLoading(false);
       });
   };
