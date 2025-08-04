@@ -20,6 +20,7 @@ import {
   Group,
   Container,
   useMantineColorScheme,
+  Stack,
 } from "@mantine/core";
 
 export type SessionInfo = {
@@ -658,7 +659,7 @@ export default function MultiProbeChart() {
           </div>
         </Paper>
       ) : (
-        <>
+        <Stack>
           <Paper
             shadow="sm"
             p="xl"
@@ -682,7 +683,7 @@ export default function MultiProbeChart() {
             mb={24}
             w="100%"
             radius={8}
-            shadow="xs"
+            shadow="sm"
             p={8}
             className={styles.metricsPaper}
             style={{ width: "100%", maxWidth: "100%" }}
@@ -755,7 +756,7 @@ export default function MultiProbeChart() {
               }}
             />
           </Paper>
-        </>
+        </Stack>
       )}
     </div>
   );
