@@ -47,6 +47,22 @@ export default function MultiProbeChart() {
   const { colorScheme } = useMantineColorScheme();
   const isDarkMode = colorScheme === "dark";
 
+  // Responsive chart width
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [chartWidth, setChartWidth] = useState(800);
+  useEffect(() => {
+    function updateWidth() {
+      if (containerRef.current) {
+        // Use 95% of container width for chart
+        setChartWidth(Math.max(400, containerRef.current.offsetWidth * 0.95));
+      }
+    }
+    updateWidth();
+    const resizeObserver = new window.ResizeObserver(updateWidth);
+    if (containerRef.current) resizeObserver.observe(containerRef.current);
+    return () => resizeObserver.disconnect();
+  }, []);
+
   const [data, setData] = useState<DynamicProbeData[]>([]);
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [selectedSession, setSelectedSession] = useState<string>("");
@@ -55,7 +71,6 @@ export default function MultiProbeChart() {
   const [starLoading, setStarLoading] = useState(false);
   const [tempHeaders, setTempHeaders] = useState<string[]>([]);
   const [metricHeaders, setMetricHeaders] = useState<string[]>([]);
-  const chartWidth = 900;
 
   useEffect(() => {
     // Fetch session list on mount
@@ -492,9 +507,17 @@ export default function MultiProbeChart() {
   };
 
   return (
-    <div className={styles.chartContainer}>
-      <Container size="md" px={0} style={{ marginBottom: 16 }}>
-        <Group justify="center" align="center">
+    <div
+      ref={containerRef}
+      className={styles.chartContainer}
+      style={{ width: "100%", maxWidth: "100%" }}
+    >
+      <Container
+        size="md"
+        px={0}
+        style={{ marginBottom: 16, width: "100%", maxWidth: "100%" }}
+      >
+        <Group justify="center" align="end">
           <Select
             label="Session"
             placeholder="Select session"
@@ -584,7 +607,12 @@ export default function MultiProbeChart() {
         </Group>
       </Container>
       {sessions.length === 0 ? (
-        <Paper shadow="sm" p="xl" className={styles.chartPaper}>
+        <Paper
+          shadow="sm"
+          p="xl"
+          className={styles.chartPaper}
+          style={{ width: "100%", maxWidth: "100%" }}
+        >
           <div style={{ textAlign: "center", fontSize: 18 }}>
             No sessions available.
             <br />
@@ -593,7 +621,12 @@ export default function MultiProbeChart() {
         </Paper>
       ) : (
         <>
-          <Paper shadow="sm" p="xl" className={styles.chartPaper}>
+          <Paper
+            shadow="sm"
+            p="xl"
+            className={styles.chartPaper}
+            style={{ width: "100%", maxWidth: "100%" }}
+          >
             <LoadingOverlay
               visible={loading}
               zIndex={1000}
@@ -614,13 +647,21 @@ export default function MultiProbeChart() {
             shadow="xs"
             p={8}
             className={styles.metricsPaper}
+            style={{ width: "100%", maxWidth: "100%" }}
           >
             <div className={styles.tip}>
               <b>Tip:</b> Drag along one axis of the graph to zoom that axis or
               drag diagonally to zoom into a rectangle. Double-click to reset
               zoom.
             </div>
-            <div className={styles.rangeSliderContainer}>
+            <div
+              className={styles.rangeSliderContainer}
+              style={{
+                width: "100%",
+                maxWidth: chartWidth,
+                margin: "12px auto 16px",
+              }}
+            >
               <RangeSlider
                 min={minX}
                 max={maxX}
@@ -636,6 +677,7 @@ export default function MultiProbeChart() {
                 size="lg"
                 label={(value) => formatTime(null, value)}
                 disabled={sessions.length === 0}
+                style={{ width: "100%", maxWidth: chartWidth }}
               />
             </div>
             <div className={styles.resetZoomRow}>
@@ -656,7 +698,12 @@ export default function MultiProbeChart() {
               </Button>
             </div>
           </Paper>
-          <Paper shadow="sm" p="xl" className={styles.chartPaper}>
+          <Paper
+            shadow="sm"
+            p="xl"
+            className={styles.chartPaper}
+            style={{ width: "100%", maxWidth: "100%" }}
+          >
             <LoadingOverlay
               visible={loading}
               zIndex={1000}

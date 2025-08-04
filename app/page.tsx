@@ -5,7 +5,7 @@ import MultiProbeChart from "../components/MultiProbeChart";
 
 export default function HomePage() {
   return (
-    <Container size="xl" px="md" style={{ maxWidth: "1400px" }}>
+    <Container size="xxl" px="md">
       <Welcome />
       <ColorSchemeToggle />
       <MultiProbeChart />
