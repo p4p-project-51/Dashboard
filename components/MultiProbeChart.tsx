@@ -584,10 +584,8 @@ export default function MultiProbeChart() {
             disabled={sessions.length === 0}
             size="sm"
             styles={{
-              label: { fontWeight: 600, fontSize: 14 },
-              input: { fontSize: 14, borderRadius: 4 },
+              root: { flexGrow: "1" }
             }}
-            style={{ minWidth: 320 }}
           />
           <Group justify="center">
             <Button
