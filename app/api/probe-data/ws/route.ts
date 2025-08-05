@@ -1,3 +1,10 @@
+export function GET() {
+  const headers = new Headers();
+  headers.set("Connection", "Upgrade");
+  headers.set("Upgrade", "websocket");
+  return new Response("Upgrade Required", { status: 426, headers });
+}
+
 export function SOCKET(
   client: import("ws").WebSocket,
   request: import("http").IncomingMessage,
