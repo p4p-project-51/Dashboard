@@ -83,8 +83,8 @@ export default function MultiProbeChart() {
     fetch("/api/probe-data/sessions")
       .then((res) => res.json())
       .then((sessionList: SessionInfo[]) => {
-        setSelectedSession(sessionList[0]?.id || "");
         setSessions(sessionList.reverse());
+        setSelectedSession(sessionList[0]?.id || "");
         console.log("Sessions loaded:", sessionList);
       });
   }, []);
