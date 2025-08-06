@@ -3,9 +3,9 @@ import { getParsedSessionById } from "../helpers";
 
 export async function GET(
   request: Request,
-  { params }: { params: { sessionId: string } }
+  { params }: { params: Promise<{ sessionId: string }> }
 ) {
-  const id = params.sessionId;
+  const id = (await params).sessionId;
   const data = getParsedSessionById(id);
   if (!data) {
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
