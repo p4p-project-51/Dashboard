@@ -50,7 +50,8 @@ export function getAllSessions(): Session[] {
         typeof id === "string" &&
         typeof fileName === "string"
       );
-    });
+    })
+    .sort((a, b) => a.sequence - b.sequence);
 }
 
 export function findSessionFileById(id: string) {
