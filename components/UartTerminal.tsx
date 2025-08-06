@@ -110,6 +110,13 @@ export default function UartTerminal() {
               autosize
               placeholder="Type and send..."
               disabled={!connected}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  // Submit form
+                  handleSubmit(e as any);
+                }
+              }}
             />
             <Button type="submit" disabled={!connected}>
               Send
