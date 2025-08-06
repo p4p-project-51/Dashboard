@@ -3,7 +3,7 @@ import UartTerminal from "../../components/UartTerminal";
 
 export default function VitalsPage() {
   return (
-    <Container size="md" px="md">
+    <Container size="xxl" px="md">
       <Title order={2}>Vitals</Title>
       <Text mt="md">UART Terminal:</Text>
       <UartTerminal />

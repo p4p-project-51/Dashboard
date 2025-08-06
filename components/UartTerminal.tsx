@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { Button, Textarea, Group, Text, Stack } from "@mantine/core";
+import { Button, Textarea, Group, Text, Stack, Container } from "@mantine/core";
 import BluetoothTerminal from "./BluetoothTerminal";
 
 export default function UartTerminal() {
@@ -36,7 +36,8 @@ export default function UartTerminal() {
       setDeviceName(btRef.current.getDeviceName() || "Terminal");
       setTerminal(
         (prev) =>
-          prev + `\nConnected to ${btRef.current.getDeviceName() || "Terminal"}`
+          prev +
+          `\nConnected to ${btRef.current.getDeviceName() || "Terminal"}\n`
       );
     } catch (err: any) {
       if (
@@ -86,42 +87,58 @@ export default function UartTerminal() {
   };
 
   return (
-    <Stack gap={"md"}>
-      <Group gap={"md"}>
-        <Button onClick={connectBluetooth} disabled={connected}>
-          Connect Bluetooth UART
-        </Button>
-        <Button onClick={disconnectBluetooth} disabled={!connected} color="red">
-          Disconnect
-        </Button>
-        <Text>Device: {deviceName}</Text>
-      </Group>
-      <Textarea
-        value={terminal}
-        minRows={12}
-        autosize
-        readOnly
-        styles={{
-          input: { fontFamily: "monospace", background: "#222", color: "#eee" },
-        }}
-      />
-      <form onSubmit={handleSubmit}>
+      <Stack gap={"md"}>
         <Group gap={"md"}>
-          <Textarea
-            ref={terminalRef}
-            minRows={1}
-            autosize
-            placeholder="Type and send..."
-            disabled={!connected}
-          />
-          <Button type="submit" disabled={!connected}>
-            Send
+          <Button onClick={connectBluetooth} disabled={connected}>
+            Connect Bluetooth UART
           </Button>
+          <Button
+            onClick={disconnectBluetooth}
+            disabled={!connected}
+            color="red"
+          >
+            Disconnect
+          </Button>
+          <Text>Device: {deviceName}</Text>
         </Group>
-      </form>
-      <Text size="sm" color="dimmed">
-        {connected ? "Connected" : "Disconnected"}
-      </Text>
-    </Stack>
+
+        <form onSubmit={handleSubmit}>
+          <Group gap={"md"}>
+            <Textarea
+              ref={terminalRef}
+              minRows={1}
+              autosize
+              placeholder="Type and send..."
+              disabled={!connected}
+            />
+            <Button type="submit" disabled={!connected}>
+              Send
+            </Button>
+          </Group>
+        </form>
+        <Text size="sm" color="dimmed">
+          {connected ? "Connected" : "Disconnected"}
+        </Text>
+
+        <Textarea
+          value={terminal}
+          readOnly
+          styles={{
+            input: {
+              fontFamily: "monospace",
+              background: "#222",
+              color: "#eee",
+              width: "100%",
+              minWidth: "600px",
+              maxWidth: "100vw",
+            },
+            root: {
+              width: "100%",
+            },
+          }}
+          minRows={12}
+          autosize
+        />
+      </Stack>
   );
 }
