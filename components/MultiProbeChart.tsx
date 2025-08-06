@@ -577,26 +577,20 @@ export default function MultiProbeChart() {
             const timestamps = updatedData.map((d) => d.timestamp);
             const minX = timestamps.length > 0 ? Math.min(...timestamps) : 0;
             const maxX = timestamps.length > 0 ? Math.max(...timestamps) : 1;
-            // Only zoom out if new data extends the range
-            const prevMinX = prevData.length > 0 ? Math.min(...prevData.map(d => d.timestamp)) : minX;
-            const prevMaxX = prevData.length > 0 ? Math.max(...prevData.map(d => d.timestamp)) : maxX;
-            if (minX < prevMinX || maxX > prevMaxX) {
-              setXZoom([minX, maxX]);
-              setBrush([minX, maxX]);
-            }
-            return updatedData;
-          });
-        } else if (msg.id === selectedSession && msg.data) {
-          // Existing live update for probe data
-          setData((prevData) => {
-            const updatedData = [...prevData, msg.data];
-            const timestamps = updatedData.map((d) => d.timestamp);
-            const minX = timestamps.length > 0 ? Math.min(...timestamps) : 0;
-            const maxX = timestamps.length > 0 ? Math.max(...timestamps) : 1;
-            // Only zoom out if new data extends the range
-            const prevMinX = prevData.length > 0 ? Math.min(...prevData.map(d => d.timestamp)) : minX;
-            const prevMaxX = prevData.length > 0 ? Math.max(...prevData.map(d => d.timestamp)) : maxX;
-            if (minX < prevMinX || maxX > prevMaxX) {
+            const prevMinX =
+              prevData.length > 0
+                ? Math.min(...prevData.map((d) => d.timestamp))
+                : minX;
+            const prevMaxX =
+              prevData.length > 0
+                ? Math.max(...prevData.map((d) => d.timestamp))
+                : maxX;
+            // Only zoom out if user is fully zoomed out (xZoom matches prevMinX/prevMaxX)
+            if (
+              (xZoom == null ||
+                (xZoom[0] === prevMinX && xZoom[1] === prevMaxX)) &&
+              (minX < prevMinX || maxX > prevMaxX)
+            ) {
               setXZoom([minX, maxX]);
               setBrush([minX, maxX]);
             }
