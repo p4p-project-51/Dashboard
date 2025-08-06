@@ -123,10 +123,10 @@ class BluetoothTerminal {
         this._disconnectFromDevice(this._device);
 
         if (this._characteristic) {
-            this._characteristic.removeEventListener(
-                'characteristicvaluechanged',
-                this._boundHandleCharacteristicValueChanged
-            );
+            // this._characteristic.removeEventListener(
+            //     'characteristicvaluechanged',
+            //     this._boundHandleCharacteristicValueChanged
+            // );
             this._characteristic = null;
         }
 
