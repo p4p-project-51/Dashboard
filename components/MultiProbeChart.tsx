@@ -103,13 +103,13 @@ export default function MultiProbeChart() {
         ) {
           const tempHeaders = header.filter((h) => h.startsWith("Temperature"));
           const metricHeaders = header.filter(
-            (h) => !h.startsWith("Temperature") && h !== "Timestamp (ms)"
+            (h) => !h.startsWith("Temperature") && !h.startsWith("Time")
           );
 
           const parsedData = rows.map((row) => {
             const obj: DynamicProbeData = { timestamp: Number(row[0]) }; // Parse timestamp correctly
             header.forEach((key, index) => {
-              if (key !== "Timestamp (ms)") {
+              if (!key.startsWith("Time")) {
                 obj[key] = parseFloat(row[index]) || null;
               }
             });
@@ -504,13 +504,13 @@ export default function MultiProbeChart() {
         ) {
           const tempHeaders = header.filter((h) => h.startsWith("Temperature"));
           const metricHeaders = header.filter(
-            (h) => !h.startsWith("Temperature") && h !== "Timestamp (ms)"
+            (h) => !h.startsWith("Temperature") && !h.startsWith("Time")
           );
 
           const parsedData = rows.map((row) => {
             const obj: DynamicProbeData = { timestamp: Number(row[0]) };
             header.forEach((key, index) => {
-              if (key !== "Timestamp (ms)") {
+              if (!key.startsWith("Time")) {
                 obj[key] = parseFloat(row[index]) || null;
               }
             });

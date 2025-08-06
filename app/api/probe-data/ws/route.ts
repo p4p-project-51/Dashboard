@@ -1,3 +1,40 @@
+import fs from "fs";
+import path from "path";
+import {
+  ensureDir,
+  getAllSessions,
+  atomicWriteFileSync,
+  findSessionFileById,
+} from "../helpers";
+
+const DATA_DIR = path.resolve(process.cwd(), "data/sessions");
+
+function getNextSessionFileName(id: string): string {
+  const files = getAllSessions();
+  const sequences = files
+    .map((f) => f.sequence)
+    .filter((n) => Number.isFinite(n));
+  const nextSequence = sequences.length ? Math.max(...sequences) + 1 : 1;
+
+  // Get current date in yyyy-mm-dd
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  const dateStr = `${yyyy}-${mm}-${dd}`;
+
+  // Get time in 12-hour format with am/pm
+  let hours = now.getHours();
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+  const ampm = hours >= 12 ? "pm" : "am";
+  hours = hours % 12;
+  if (hours === 0) hours = 12;
+  const timeStr = `${hours}-${minutes}${ampm}`;
+
+  // Filename: sequence yyyy-mm-dd h-mm(am|pm) id.csv
+  return `${nextSequence} ${dateStr} ${timeStr} ${id}.csv`;
+}
+
 export function GET() {
   const headers = new Headers();
   headers.set("Connection", "Upgrade");
@@ -14,7 +51,65 @@ export function SOCKET(
 
   client.on("message", (message) => {
     console.log("Received message:", message);
-    client.send(message);
+
+    try {
+      const body = JSON.parse(message.toString());
+      console.log("Received message:", body);
+
+      let { id, header, values, timestamp } = body;
+      if (!id || typeof id !== "string") {
+        client.send(JSON.stringify({ error: "Missing id" }));
+        return;
+      }
+      if (!Array.isArray(header) || header.length < 2) {
+        client.send(
+          JSON.stringify({ error: "Missing or invalid header array" })
+        );
+        return;
+      }
+      if (!Array.isArray(values) || values.length === 0) {
+        client.send(JSON.stringify({ error: "Missing or empty values array" }));
+        return;
+      }
+
+      ensureDir();
+
+      // Try find existing session file by id, if not found, create a new one
+      let fileName =
+        findSessionFileById(id)?.fileName ?? getNextSessionFileName(id);
+      const filePath = path.join(DATA_DIR, fileName);
+
+      // Prepare CSV header if new file or file is empty
+      if (
+        !fs.existsSync(filePath) ||
+        fs.readFileSync(filePath, "utf8").trim() === ""
+      ) {
+        atomicWriteFileSync(
+          filePath,
+          ["Timestamp", ...header].join(",") + "\n",
+          "utf8"
+        );
+      }
+
+      // Write new values as a single row with timestamp
+      let row;
+      if (Array.isArray(values)) {
+        row = [timestamp, ...values].map((val: any) => val ?? "").join(",");
+        fs.appendFileSync(filePath, row + "\n", "utf8");
+      } else {
+        // fallback: write timestamp and value as a row
+        row = [timestamp, values ?? ""].join(",");
+        fs.appendFileSync(filePath, row + "\n", "utf8");
+      }
+
+      client.send(JSON.stringify({ fileName, header, values, timestamp }));
+    } catch (err) {
+      const msg =
+        typeof err === "object" && err && "message" in err
+          ? (err as any).message
+          : String(err);
+      client.send(JSON.stringify({ error: msg }));
+    }
   });
 
   client.on("close", () => {

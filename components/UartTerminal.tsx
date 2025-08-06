@@ -10,6 +10,9 @@ export default function UartTerminal() {
   const [deviceName, setDeviceName] = useState("Terminal");
   const terminalRef = useRef<any>(null);
   const btRef = useRef<any>(null);
+  const wsRef = useRef<WebSocket | null>(null); // WebSocket ref
+  const backlogRef = useRef<string[]>([]); // Buffer for unsent messages
+  const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // UUIDs as numbers for Web Bluetooth compatibility with ESP32
   const SERVICE_UUID = 0xffe0;
@@ -24,7 +27,6 @@ export default function UartTerminal() {
         "\n",
         "\n"
       );
-
       btRef.current.receive = (data: string) => {
         setTerminal((prev) => prev + data + "\n");
       };
@@ -39,6 +41,57 @@ export default function UartTerminal() {
           prev +
           `\nConnected to ${btRef.current.getDeviceName() || "Terminal"}\n`
       );
+      // Open WebSocket connection
+      const openWebSocket = () => {
+        wsRef.current = new WebSocket(
+          `${window.location.protocol === "https:" ? "wss" : "ws"}://${
+            window.location.host
+          }/api/probe-data/ws`
+        );
+        wsRef.current.onopen = () => {
+          setTerminal((prev) => prev + "[WebSocket] Connected\n");
+          // Send backlog
+          while (backlogRef.current.length > 0) {
+            wsRef.current?.send(backlogRef.current.shift()!);
+          }
+        };
+        wsRef.current.onclose = () => {
+          setTerminal((prev) => prev + "[WebSocket] Disconnected\n");
+          // Try to reconnect after 2s
+          if (!reconnectIntervalRef.current) {
+            reconnectIntervalRef.current = setInterval(() => {
+              if (
+                !wsRef.current ||
+                wsRef.current.readyState === WebSocket.CLOSED
+              ) {
+                openWebSocket();
+              }
+            }, 2000);
+          }
+        };
+        wsRef.current.onerror = (e) => {
+          setTerminal((prev) => prev + `[WebSocket] Error: ${e}\n`);
+        };
+      };
+      openWebSocket();
+      // Forward readings to WebSocket
+      btRef.current.receive = (data: string) => {
+        setTerminal((prev) => prev + data + "\n");
+        // Forward JSON string directly to WebSocket or buffer if not open
+        try {
+          const obj = JSON.parse(data);
+          if (obj && obj.id && obj.header && obj.values) {
+            if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+              wsRef.current.send(data);
+              console.log("Sent to WebSocket:", obj);
+            } else {
+              backlogRef.current.push(data);
+            }
+          }
+        } catch (e) {
+          // Not a valid JSON, ignore
+        }
+      };
     } catch (err: any) {
       if (
         err?.message?.includes("User cancelled the requestDevice() chooser")
@@ -62,6 +115,15 @@ export default function UartTerminal() {
       setConnected(false);
       setDeviceName("Terminal");
     }
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    if (reconnectIntervalRef.current) {
+      clearInterval(reconnectIntervalRef.current);
+      reconnectIntervalRef.current = null;
+    }
+    backlogRef.current = [];
   };
 
   // Send data to UART
@@ -87,65 +149,61 @@ export default function UartTerminal() {
   };
 
   return (
-      <Stack gap={"md"}>
+    <Stack gap={"md"}>
+      <Group gap={"md"}>
+        <Button onClick={connectBluetooth} disabled={connected}>
+          Connect Bluetooth UART
+        </Button>
+        <Button onClick={disconnectBluetooth} disabled={!connected} color="red">
+          Disconnect
+        </Button>
+        <Text>Device: {deviceName}</Text>
+      </Group>
+
+      <form onSubmit={handleSubmit}>
         <Group gap={"md"}>
-          <Button onClick={connectBluetooth} disabled={connected}>
-            Connect Bluetooth UART
-          </Button>
-          <Button
-            onClick={disconnectBluetooth}
+          <Textarea
+            ref={terminalRef}
+            minRows={1}
+            autosize
+            placeholder="Type and send..."
             disabled={!connected}
-            color="red"
-          >
-            Disconnect
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                // Submit form
+                handleSubmit(e as any);
+              }
+            }}
+          />
+          <Button type="submit" disabled={!connected}>
+            Send
           </Button>
-          <Text>Device: {deviceName}</Text>
         </Group>
+      </form>
+      <Text size="sm" color="dimmed">
+        {connected ? "Connected" : "Disconnected"}
+      </Text>
 
-        <form onSubmit={handleSubmit}>
-          <Group gap={"md"}>
-            <Textarea
-              ref={terminalRef}
-              minRows={1}
-              autosize
-              placeholder="Type and send..."
-              disabled={!connected}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  // Submit form
-                  handleSubmit(e as any);
-                }
-              }}
-            />
-            <Button type="submit" disabled={!connected}>
-              Send
-            </Button>
-          </Group>
-        </form>
-        <Text size="sm" color="dimmed">
-          {connected ? "Connected" : "Disconnected"}
-        </Text>
-
-        <Textarea
-          value={terminal}
-          readOnly
-          styles={{
-            input: {
-              fontFamily: "monospace",
-              background: "#222",
-              color: "#eee",
-              width: "100%",
-              minWidth: "600px",
-              maxWidth: "100vw",
-            },
-            root: {
-              width: "100%",
-            },
-          }}
-          minRows={12}
-          autosize
-        />
-      </Stack>
+      <Textarea
+        value={terminal}
+        readOnly
+        styles={{
+          input: {
+            fontFamily: "monospace",
+            background: "#222",
+            color: "#eee",
+            width: "100%",
+            minWidth: "600px",
+            maxWidth: "100vw",
+          },
+          root: {
+            width: "100%",
+          },
+        }}
+        minRows={12}
+        autosize
+      />
+    </Stack>
   );
 }
