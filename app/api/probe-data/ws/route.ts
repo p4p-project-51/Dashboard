@@ -53,7 +53,8 @@ export function SOCKET(
     console.log("Received message:", message);
 
     try {
-      const body = JSON.parse(message.toString());
+      const body_str = message.toString();
+      const body = JSON.parse(body_str);
       console.log("Received message:", body);
 
       let { id, header, values, timestamp } = body;
@@ -97,12 +98,20 @@ export function SOCKET(
         row = [timestamp, ...values].map((val: any) => val ?? "").join(",");
         fs.appendFileSync(filePath, row + "\n", "utf8");
       } else {
-        // fallback: write timestamp and value as a row
         row = [timestamp, values ?? ""].join(",");
         fs.appendFileSync(filePath, row + "\n", "utf8");
       }
 
-      client.send(JSON.stringify({ fileName, header, values, timestamp }));
+      // Broadcast to all clients using server.clients
+      server.clients.forEach((ws: import("ws").WebSocket) => {
+        if (ws.readyState === ws.OPEN) {
+          try {
+            ws.send(body_str);
+          } catch (err) {
+            console.error("Error sending message to client:", err);
+          }
+        }
+      });
     } catch (err) {
       const msg =
         typeof err === "object" && err && "message" in err
