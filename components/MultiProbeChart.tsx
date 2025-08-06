@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState, useMemo, useRef } from "react";
+import React, { useContext, useEffect, useState, useRef, useMemo } from "react";
+import { WebSocketContext } from "../app/layout";
 import UplotReact from "uplot-react";
 import "uplot/dist/uPlot.min.css";
 import styles from "./MultiProbeChart.module.css";
@@ -77,6 +78,8 @@ export default function MultiProbeChart() {
   const [starLoading, setStarLoading] = useState(false);
   const [tempHeaders, setTempHeaders] = useState<string[]>([]);
   const [metricHeaders, setMetricHeaders] = useState<string[]>([]);
+
+  const ws = useContext(WebSocketContext);
 
   useEffect(() => {
     // Fetch session list on mount
@@ -549,6 +552,66 @@ export default function MultiProbeChart() {
         setLoading(false);
       });
   };
+
+  useEffect(() => {
+    if (!ws) return;
+    // Handler for incoming WebSocket messages
+    const handleMessage = (event: MessageEvent) => {
+      try {
+        const msg = JSON.parse(event.data);
+        // UART message format: { id, timestamp, header, values }
+        if (
+          msg.id === selectedSession &&
+          msg.timestamp &&
+          Array.isArray(msg.header) &&
+          Array.isArray(msg.values)
+        ) {
+          // Convert UART message to DynamicProbeData
+          const uartData: DynamicProbeData = { timestamp: msg.timestamp };
+          msg.header.forEach((key: string, idx: number) => {
+            uartData[key] =
+              typeof msg.values[idx] === "number" ? msg.values[idx] : null;
+          });
+          setData((prevData) => {
+            const updatedData = [...prevData, uartData];
+            const timestamps = updatedData.map((d) => d.timestamp);
+            const minX = timestamps.length > 0 ? Math.min(...timestamps) : 0;
+            const maxX = timestamps.length > 0 ? Math.max(...timestamps) : 1;
+            // Only zoom out if new data extends the range
+            const prevMinX = prevData.length > 0 ? Math.min(...prevData.map(d => d.timestamp)) : minX;
+            const prevMaxX = prevData.length > 0 ? Math.max(...prevData.map(d => d.timestamp)) : maxX;
+            if (minX < prevMinX || maxX > prevMaxX) {
+              setXZoom([minX, maxX]);
+              setBrush([minX, maxX]);
+            }
+            return updatedData;
+          });
+        } else if (msg.id === selectedSession && msg.data) {
+          // Existing live update for probe data
+          setData((prevData) => {
+            const updatedData = [...prevData, msg.data];
+            const timestamps = updatedData.map((d) => d.timestamp);
+            const minX = timestamps.length > 0 ? Math.min(...timestamps) : 0;
+            const maxX = timestamps.length > 0 ? Math.max(...timestamps) : 1;
+            // Only zoom out if new data extends the range
+            const prevMinX = prevData.length > 0 ? Math.min(...prevData.map(d => d.timestamp)) : minX;
+            const prevMaxX = prevData.length > 0 ? Math.max(...prevData.map(d => d.timestamp)) : maxX;
+            if (minX < prevMinX || maxX > prevMaxX) {
+              setXZoom([minX, maxX]);
+              setBrush([minX, maxX]);
+            }
+            return updatedData;
+          });
+        }
+      } catch (e) {
+        // Ignore invalid messages
+      }
+    };
+    ws.addEventListener("message", handleMessage);
+    return () => {
+      ws.removeEventListener("message", handleMessage);
+    };
+  }, [ws, selectedSession, xZoom]);
 
   return (
     <div

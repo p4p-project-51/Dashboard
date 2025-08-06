@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useContext } from "react";
 import { Button, Textarea, Group, Text, Stack, Container } from "@mantine/core";
 import BluetoothTerminal from "./BluetoothTerminal";
+import { WebSocketContext } from "../app/layout";
 
 export default function UartTerminal() {
   const [connected, setConnected] = useState(false);
@@ -10,9 +11,8 @@ export default function UartTerminal() {
   const [deviceName, setDeviceName] = useState("Terminal");
   const terminalRef = useRef<any>(null);
   const btRef = useRef<any>(null);
-  const wsRef = useRef<WebSocket | null>(null); // WebSocket ref
+  const ws = useContext(WebSocketContext); // Use shared WebSocket
   const backlogRef = useRef<string[]>([]); // Buffer for unsent messages
-  const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // UUIDs as numbers for Web Bluetooth compatibility with ESP32
   const SERVICE_UUID = 0xffe0;
@@ -41,39 +41,6 @@ export default function UartTerminal() {
           prev +
           `\nConnected to ${btRef.current.getDeviceName() || "Terminal"}\n`
       );
-      // Open WebSocket connection
-      const openWebSocket = () => {
-        wsRef.current = new WebSocket(
-          `${window.location.protocol === "https:" ? "wss" : "ws"}://${
-            window.location.host
-          }/api/probe-data/ws`
-        );
-        wsRef.current.onopen = () => {
-          setTerminal((prev) => prev + "[WebSocket] Connected\n");
-          // Send backlog
-          while (backlogRef.current.length > 0) {
-            wsRef.current?.send(backlogRef.current.shift()!);
-          }
-        };
-        wsRef.current.onclose = () => {
-          setTerminal((prev) => prev + "[WebSocket] Disconnected\n");
-          // Try to reconnect after 2s
-          if (!reconnectIntervalRef.current) {
-            reconnectIntervalRef.current = setInterval(() => {
-              if (
-                !wsRef.current ||
-                wsRef.current.readyState === WebSocket.CLOSED
-              ) {
-                openWebSocket();
-              }
-            }, 2000);
-          }
-        };
-        wsRef.current.onerror = (e) => {
-          setTerminal((prev) => prev + `[WebSocket] Error: ${e}\n`);
-        };
-      };
-      openWebSocket();
       // Forward readings to WebSocket
       btRef.current.receive = (data: string) => {
         setTerminal((prev) => prev + data + "\n");
@@ -81,8 +48,8 @@ export default function UartTerminal() {
         try {
           const obj = JSON.parse(data);
           if (obj && obj.id && obj.header && obj.values) {
-            if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-              wsRef.current.send(data);
+            if (ws && ws.readyState === WebSocket.OPEN) {
+              ws.send(data);
               console.log("Sent to WebSocket:", obj);
             } else {
               backlogRef.current.push(data);
@@ -92,6 +59,12 @@ export default function UartTerminal() {
           // Not a valid JSON, ignore
         }
       };
+      // Send backlog if any
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        while (backlogRef.current.length > 0) {
+          ws.send(backlogRef.current.shift()!);
+        }
+      }
     } catch (err: any) {
       if (
         err?.message?.includes("User cancelled the requestDevice() chooser")
@@ -114,14 +87,6 @@ export default function UartTerminal() {
       await btRef.current.disconnect();
       setConnected(false);
       setDeviceName("Terminal");
-    }
-    if (wsRef.current) {
-      wsRef.current.close();
-      wsRef.current = null;
-    }
-    if (reconnectIntervalRef.current) {
-      clearInterval(reconnectIntervalRef.current);
-      reconnectIntervalRef.current = null;
     }
     backlogRef.current = [];
   };
@@ -182,7 +147,7 @@ export default function UartTerminal() {
         </Group>
       </form>
       <Text size="sm" color="dimmed">
-        {connected ? "Connected" : "Disconnected"}
+        Bluetooth: {connected ? "Connected" : "Disconnected"}
       </Text>
 
       <Textarea

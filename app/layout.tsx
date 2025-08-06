@@ -1,5 +1,7 @@
+"use client";
+
 import "@mantine/core/styles.css";
-import React from "react";
+import React, { createContext, useEffect } from "react";
 import {
   MantineProvider,
   ColorSchemeScript,
@@ -11,12 +13,61 @@ import { shadcnTheme } from "../theme";
 import "../style.css";
 import { Header } from "../components/Header/Header";
 
-export const metadata = {
-  title: "Mantine Next.js template",
-  description: "I am using Mantine with Next.js!",
-};
+export const WebSocketContext = createContext<WebSocket | null>(null);
 
 export default function RootLayout({ children }: { children: any }) {
+  const [ws, setWs] = React.useState<WebSocket | null>(null);
+  const reconnectTimer = React.useRef<NodeJS.Timeout | null>(null);
+  const reconnectIntervalMs = React.useRef(250); // ms, starts at 250ms
+
+  const openWebSocket = React.useCallback(() => {
+    if (ws) return;
+    const socket = new WebSocket(
+      `${
+        typeof window !== "undefined" && window.location.protocol === "https:"
+          ? "wss"
+          : "ws"
+      }://${
+        typeof window !== "undefined" ? window.location.host : ""
+      }/api/probe-data/ws`
+    );
+    setWs(socket);
+    socket.onopen = () => {
+      reconnectIntervalMs.current = 250;
+    };
+    socket.onclose = () => {
+      setWs(null);
+      // Try to reconnect
+      if (!reconnectTimer.current) {
+        reconnectTimer.current = setTimeout(() => {
+          reconnectTimer.current = null;
+          openWebSocket();
+          reconnectIntervalMs.current = Math.min(
+            reconnectIntervalMs.current + 250,
+            5000
+          );
+        }, reconnectIntervalMs.current);
+      }
+    };
+    socket.onerror = () => {
+      socket.close();
+      setWs(null);
+    };
+  }, [ws]);
+
+  React.useEffect(() => {
+    openWebSocket();
+
+    return () => {
+      ws?.close();
+      setWs(null);
+      if (reconnectTimer.current) {
+        clearTimeout(reconnectTimer.current);
+        reconnectTimer.current = null;
+      }
+    };
+  }, []); 
+
   return (
     <html lang="en" {...mantineHtmlProps}>
       <head>
@@ -28,13 +79,15 @@ export default function RootLayout({ children }: { children: any }) {
         />
       </head>
       <body>
-        <MantineProvider
-          theme={shadcnTheme}
-          cssVariablesResolver={shadcnCssVariableResolver}
-        >
-          <Header />
-          {children}
-        </MantineProvider>
+        <WebSocketContext.Provider value={ws}>
+          <MantineProvider
+            theme={shadcnTheme}
+            cssVariablesResolver={shadcnCssVariableResolver}
+          >
+            <Header />
+            {children}
+          </MantineProvider>
+        </WebSocketContext.Provider>
       </body>
     </html>
   );
