@@ -10,8 +10,10 @@
     "prepare": "next-ws patch"
   },
   "dependencies": {
+    "@mantine/charts": "^8.2.3",
     "@mantine/core": "8.1.2",
     "@mantine/hooks": "8.1.2",
+    "@mantine/notifications": "^8.2.3",
     "@mantinex/mantine-logo": "^2.0.0",
     "@tabler/icons-react": "^3.34.1",
     "clsx": "^2.1.1",
