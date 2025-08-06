@@ -475,6 +475,27 @@ export default function MultiProbeChart() {
   const metricsPlotRef = useRef<any>(null);
   const isSyncingCursor = useRef(false);
 
+  // Track if user is actively selecting (mouse down)
+  const isSelecting = useRef(false);
+  useEffect(() => {
+    const handleMouseDown = () => {
+      isSelecting.current = true;
+    };
+    const handleMouseUp = () => {
+      isSelecting.current = false;
+    };
+    const container = containerRef.current;
+    if (container) {
+      container.addEventListener("mousedown", handleMouseDown);
+      window.addEventListener("mouseup", handleMouseUp);
+    }
+    return () => {
+      if (container)
+        container.removeEventListener("mousedown", handleMouseDown);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, []);
+
   // Helper to toggle star
   const toggleStar = async () => {
     setStarLoading(true);
@@ -585,8 +606,9 @@ export default function MultiProbeChart() {
               prevData.length > 0
                 ? Math.max(...prevData.map((d) => d.timestamp))
                 : maxX;
-            // Only zoom out if user is fully zoomed out (xZoom matches prevMinX/prevMaxX)
+            // Only zoom out if user is fully zoomed out and not actively selecting
             if (
+              !isSelecting.current &&
               (xZoom == null ||
                 (xZoom[0] === prevMinX && xZoom[1] === prevMaxX)) &&
               (minX < prevMinX || maxX > prevMaxX)
