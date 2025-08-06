@@ -346,6 +346,25 @@ class BluetoothTerminal {
     }
 
     /**
+     * Stop notifications.
+     * @param {Object} characteristic
+     * @return {Promise}
+     * @private
+     */
+    _stopNotifications(characteristic) {
+        this._log('Stopping notifications...');
+
+        return characteristic.stopNotifications().then(() => {
+            this._log('Notifications stopped');
+
+            characteristic.removeEventListener(
+                'characteristicvaluechanged',
+                this._boundHandleCharacteristicValueChanged
+            );
+        });
+    }
+
+    /**
      * Handle disconnection.
      * @param {Object} event
      * @private
@@ -405,6 +424,17 @@ class BluetoothTerminal {
      */
     _log(...messages) {
         console.log(...messages); // eslint-disable-line no-console
+    }
+
+    /**
+     * Split by length.
+     * @param {string} string
+     * @param {number} length
+     * @return {Array}
+     * @private
+     */
+    static _splitByLength(string, length) {
+        return string.match(new RegExp('(.|[\r\n]){1,' + length + '}', 'g'));
     }
 }
 
