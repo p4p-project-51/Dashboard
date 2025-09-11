@@ -6,6 +6,15 @@ import BluetoothTerminal from "./BluetoothTerminal";
 import { WebSocketContext } from "../app/layout";
 
 export default function UartTerminal() {
+  // Maximum number of lines to keep in the terminal output
+  const MAX_TERMINAL_LINES = 500;
+
+  // Helper to trim terminal text to the last MAX_TERMINAL_LINES lines
+  const trimToMaxLines = (text: string) => {
+    const parts = text.split("\n");
+    if (parts.length <= MAX_TERMINAL_LINES) return text;
+    return parts.slice(-MAX_TERMINAL_LINES).join("\n");
+  };
   const [connected, setConnected] = useState(false);
   const [terminal, setTerminal] = useState("");
   const [deviceName, setDeviceName] = useState("Terminal");
@@ -28,22 +37,25 @@ export default function UartTerminal() {
         "\n"
       );
       btRef.current.receive = (data: string) => {
-        setTerminal((prev) => prev + data + "\n");
+        setTerminal((prev) => trimToMaxLines(prev + data + "\n"));
       };
     }
     try {
-      setTerminal((prev) => prev + "\nRequesting Bluetooth device...");
+      setTerminal((prev) =>
+        trimToMaxLines(prev + "\nRequesting Bluetooth device...")
+      );
       await btRef.current.connect();
       setConnected(true);
       setDeviceName(btRef.current.getDeviceName() || "Terminal");
-      setTerminal(
-        (prev) =>
+      setTerminal((prev) =>
+        trimToMaxLines(
           prev +
-          `\nConnected to ${btRef.current.getDeviceName() || "Terminal"}\n`
+            `\nConnected to ${btRef.current.getDeviceName() || "Terminal"}\n`
+        )
       );
       // Forward readings to WebSocket
       btRef.current.receive = (data: string) => {
-        setTerminal((prev) => prev + data + "\n");
+        setTerminal((prev) => trimToMaxLines(prev + data + "\n"));
         // Forward JSON string directly to WebSocket or buffer if not open
         try {
           const obj = JSON.parse(data);
@@ -69,13 +81,16 @@ export default function UartTerminal() {
       if (
         err?.message?.includes("User cancelled the requestDevice() chooser")
       ) {
-        setTerminal(
-          (prev) =>
+        setTerminal((prev) =>
+          trimToMaxLines(
             prev +
-            "\n[Cancelled] Bluetooth device selection was cancelled by the user."
+              "\n[Cancelled] Bluetooth device selection was cancelled by the user."
+          )
         );
       } else {
-        setTerminal((prev) => prev + `\nError: ${err?.message || err}`);
+        setTerminal((prev) =>
+          trimToMaxLines(prev + `\nError: ${err?.message || err}`)
+        );
       }
       console.error("Bluetooth connect error:", err);
     }
@@ -96,9 +111,9 @@ export default function UartTerminal() {
     if (btRef.current && connected) {
       try {
         await btRef.current.send(data);
-        setTerminal((prev) => prev + data + "\n");
+        setTerminal((prev) => trimToMaxLines(prev + data + "\n"));
       } catch (err) {
-        setTerminal((prev) => prev + `\nSend error: ${err}`);
+        setTerminal((prev) => trimToMaxLines(prev + `\nSend error: ${err}`));
       }
     }
   };
