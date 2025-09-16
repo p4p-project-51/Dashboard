@@ -47,6 +47,23 @@ export type DynamicProbeData = Record<string, number | null> & {
   timestamp: number;
 };
 
+const adcToTempC = (X_ADC) => {
+  const R25 = 10000; // Ω
+  const B25to100 = 3590; // K
+  const SERIES_OHMS = 8200; // Ω
+
+
+  // t_NTC = 1 / ( (1/298.15) + (1/B) * ln( (8200*X_ADC) / (R25*(3300 - X_ADC)) ) ) - 273.15
+  const term = (SERIES_OHMS * X_ADC) / (R25 * (3300 - X_ADC));
+
+
+  const invT = 1 / 298.15 + (1 / B25to100) * Math.log(term);
+  const T_K = 1 / invT;
+  const t_C = T_K - 273.15;
+
+  return t_C;
+};
+
 export default function MultiProbeChart() {
   const { colorScheme } = useMantineColorScheme();
   const systemColorScheme = useColorScheme();
@@ -113,7 +130,7 @@ export default function MultiProbeChart() {
             const obj: DynamicProbeData = { timestamp: Number(row[0]) }; // Parse timestamp correctly
             header.forEach((key, index) => {
               if (!key.startsWith("Time")) {
-                obj[key] = parseFloat(row[index]) || null;
+                obj[key] = adcToTempC(parseFloat(row[index])) || null;
               }
             });
             return obj;
@@ -535,7 +552,7 @@ export default function MultiProbeChart() {
             const obj: DynamicProbeData = { timestamp: Number(row[0]) };
             header.forEach((key, index) => {
               if (!key.startsWith("Time")) {
-                obj[key] = parseFloat(row[index]) || null;
+                obj[key] = adcToTempC(parseFloat(row[index])) || null;
               }
             });
             return obj;
@@ -591,7 +608,7 @@ export default function MultiProbeChart() {
           const uartData: DynamicProbeData = { timestamp: msg.timestamp };
           msg.header.forEach((key: string, idx: number) => {
             uartData[key] =
-              typeof msg.values[idx] === "number" ? msg.values[idx] : null;
+              typeof msg.values[idx] === "number" ? adcToTempC(msg.values[idx]) : null;
           });
           setData((prevData) => {
             const updatedData = [...prevData, uartData];
