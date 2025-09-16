@@ -6,6 +6,7 @@ import {
   atomicWriteFileSync,
   findSessionFileById,
 } from "../helpers";
+import { getPinMapping } from "../pinData";
 
 const DATA_DIR = path.resolve(process.cwd(), "data/sessions");
 
@@ -58,6 +59,8 @@ export function SOCKET(
       console.log("Received message:", body);
 
       let { id, header, values, timestamp } = body;
+      header = header.map((h: string) => getPinMapping(h.trim()));
+
       if (!id || typeof id !== "string") {
         client.send(JSON.stringify({ error: "Missing id" }));
         return;
@@ -106,7 +109,7 @@ export function SOCKET(
       server.clients.forEach((ws: import("ws").WebSocket) => {
         if (ws.readyState === ws.OPEN) {
           try {
-            ws.send(body_str);
+            ws.send(JSON.stringify({ id, header, values, timestamp }));
           } catch (err) {
             console.error("Error sending message to client:", err);
           }
