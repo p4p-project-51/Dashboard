@@ -374,7 +374,7 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
   primaryShade: { light: 6, dark: 5 },
   autoContrast: true,
   luminanceThreshold: 0.3,
-  fontFamily: "Geist",
+  fontFamily: `system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;`,
   radius: {
     xs: rem("6px"),
     sm: rem("8px"),
@@ -415,7 +415,7 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
   },
 
   headings: {
-    fontFamily: "Geist",
+    fontFamily: `system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;`,
     sizes: {
       h1: {
         fontSize: rem("36px"),
@@ -459,8 +459,8 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
           "--container-size": fluid
             ? "100%"
             : size !== undefined && size in CONTAINER_SIZES
-            ? CONTAINER_SIZES[size]
-            : rem(size),
+              ? CONTAINER_SIZES[size]
+              : rem(size),
         },
       }),
     }),
@@ -531,8 +531,8 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
           "--sc-color": props.color
             ? Object.keys(theme.colors).includes(props.color)
               ? ["zinc", "slate", "gray", "neutral", "stone"].includes(
-                  props.color
-                )
+                props.color
+              )
                 ? "var(--mantine-color-body)"
                 : `var(--mantine-color-${props.color}-filled)`
               : props.color
@@ -707,10 +707,10 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
                   ? `var(--mantine-color-${colorKey}-contrast)`
                   : "var(--mantine-primary-color-contrast)"
                 : variant === "white"
-                ? isNeutralColor || isNeutralPrimaryColor
-                  ? `var(--mantine-color-black)`
-                  : undefined
-                : undefined,
+                  ? isNeutralColor || isNeutralPrimaryColor
+                    ? `var(--mantine-color-black)`
+                    : undefined
+                  : undefined,
           },
         };
       },
@@ -751,10 +751,10 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
                   ? `var(--mantine-color-${colorKey}-filled)`
                   : "var(--mantine-primary-color-filled)"
                 : variant === "light"
-                ? colorKey
-                  ? `var(--mantine-color-${colorKey}-light)`
-                  : "var(--mantine-primary-color-light)"
-                : undefined,
+                  ? colorKey
+                    ? `var(--mantine-color-${colorKey}-light)`
+                    : "var(--mantine-primary-color-light)"
+                  : undefined,
 
             "--avatar-color":
               variant === "filled"
@@ -762,20 +762,20 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
                   ? `var(--mantine-color-${colorKey}-contrast)`
                   : "var(--mantine-primary-color-contrast)"
                 : variant === "light"
-                ? colorKey
-                  ? `var(--mantine-color-${colorKey}-light-color)`
-                  : "var(--mantine-primary-color-light-color)"
-                : variant === "white"
-                ? isNeutralColor || isNeutralPrimaryColor
-                  ? `var(--mantine-color-black)`
-                  : colorKey
-                  ? `var(--mantine-color-${colorKey}-outline)`
-                  : "var(--mantine-primary-color-filled)"
-                : variant === "outline" || variant === "transparent"
-                ? colorKey
-                  ? `var(--mantine-color-${colorKey}-outline)`
-                  : "var(--mantine-primary-color-filled)"
-                : undefined,
+                  ? colorKey
+                    ? `var(--mantine-color-${colorKey}-light-color)`
+                    : "var(--mantine-primary-color-light-color)"
+                  : variant === "white"
+                    ? isNeutralColor || isNeutralPrimaryColor
+                      ? `var(--mantine-color-black)`
+                      : colorKey
+                        ? `var(--mantine-color-${colorKey}-outline)`
+                        : "var(--mantine-primary-color-filled)"
+                    : variant === "outline" || variant === "transparent"
+                      ? colorKey
+                        ? `var(--mantine-color-${colorKey}-outline)`
+                        : "var(--mantine-primary-color-filled)"
+                      : undefined,
 
             "--avatar-bd":
               variant === "outline"
@@ -814,10 +814,10 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
                   ? `var(--mantine-color-${colorKey}-contrast)`
                   : "var(--mantine-primary-color-contrast)"
                 : variant === "white"
-                ? isNeutralColor || isNeutralPrimaryColor
-                  ? `var(--mantine-color-black)`
-                  : undefined
-                : undefined,
+                  ? isNeutralColor || isNeutralPrimaryColor
+                    ? `var(--mantine-color-black)`
+                    : undefined
+                  : undefined,
           },
         };
       },
@@ -878,10 +878,10 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
                   ? `var(--mantine-color-${colorKey}-contrast)`
                   : "var(--mantine-primary-color-contrast)"
                 : variant === "white"
-                ? isNeutralColor || isNeutralPrimaryColor
-                  ? `var(--mantine-color-black)`
-                  : undefined
-                : undefined,
+                  ? isNeutralColor || isNeutralPrimaryColor
+                    ? `var(--mantine-color-black)`
+                    : undefined
+                  : undefined,
           },
         };
       },
@@ -930,9 +930,8 @@ export const shadcnTheme: MantineThemeOverride = createTheme({
           ["zinc", "slate", "gray", "neutral", "stone"].includes(colorKey);
         return {
           root: {
-            "--mark-bg-light": `var(--mantine-color-${colorKey}-${
-              isNeutralColor ? "3" : "filled-hover"
-            })`,
+            "--mark-bg-light": `var(--mantine-color-${colorKey}-${isNeutralColor ? "3" : "filled-hover"
+              })`,
             "--mark-bg-dark": `var(--mantine-color-${colorKey}-filled)`,
           },
         };
