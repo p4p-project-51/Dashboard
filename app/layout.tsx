@@ -17,11 +17,12 @@ export const WebSocketContext = createContext<WebSocket | null>(null);
 
 export default function RootLayout({ children }: { children: any }) {
   const [ws, setWs] = React.useState<WebSocket | null>(null);
+  const wsRef = React.useRef<WebSocket | null>(null);
   const reconnectTimer = React.useRef<NodeJS.Timeout | null>(null);
   const reconnectIntervalMs = React.useRef(250); // ms, starts at 250ms
 
   const openWebSocket = React.useCallback(() => {
-    if (ws) return;
+    if (wsRef.current) return;
     const socket = new WebSocket(
       `${
         typeof window !== "undefined" && window.location.protocol === "https:"
@@ -32,11 +33,13 @@ export default function RootLayout({ children }: { children: any }) {
       }/api/probe-data/ws`
     );
     setWs(socket);
+    wsRef.current = socket;
     socket.onopen = () => {
       reconnectIntervalMs.current = 250;
     };
     socket.onclose = () => {
       setWs(null);
+      wsRef.current = null;
       // Try to reconnect
       if (!reconnectTimer.current) {
         reconnectTimer.current = setTimeout(() => {
@@ -52,21 +55,23 @@ export default function RootLayout({ children }: { children: any }) {
     socket.onerror = () => {
       socket.close();
       setWs(null);
+      wsRef.current = null;
     };
-  }, [ws]);
+  }, []);
 
   React.useEffect(() => {
     openWebSocket();
 
     return () => {
-      ws?.close();
+      wsRef.current?.close();
       setWs(null);
+      wsRef.current = null;
       if (reconnectTimer.current) {
         clearTimeout(reconnectTimer.current);
         reconnectTimer.current = null;
       }
     };
-  }, []); 
+  }, [openWebSocket]);
 
   return (
     <html lang="en" {...mantineHtmlProps}>

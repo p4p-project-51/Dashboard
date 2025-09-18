@@ -245,8 +245,11 @@ export default function MultiProbeChart() {
 
   const gridColor = isDarkMode ? "#222" : "#ccc";
   const labelColor = isDarkMode ? "#fff" : "#222";
-  const lineColor = (hue: number) =>
-    isDarkMode ? `hsl(${hue}, 55%, 60%)` : `hsl(${hue}, 65%, 60%)`;
+  const lineColor = useMemo(
+    () => (hue: number) =>
+      isDarkMode ? `hsl(${hue}, 55%, 60%)` : `hsl(${hue}, 65%, 60%)`,
+    [isDarkMode]
+  );
 
   // Temperature chart config
   const tempSeriesConfig = useMemo(() => {
@@ -262,7 +265,7 @@ export default function MultiProbeChart() {
         };
       }),
     ];
-  }, [tempHeaders, isDarkMode]);
+  }, [tempHeaders, lineColor]);
 
   // Metrics chart config
   const metricsSeriesConfig = useMemo(() => {
@@ -278,7 +281,7 @@ export default function MultiProbeChart() {
         };
       }),
     ];
-  }, [metricHeaders, isDarkMode]);
+  }, [metricHeaders, lineColor]);
   const tempOpts = useMemo(
     () => ({
       width: chartWidth,
@@ -378,8 +381,8 @@ export default function MultiProbeChart() {
         ],
       },
       select: { show: true, over: true, left: 0, top: 0, width: 0, height: 0 },
-    }),
-    [xZoom, tempYZoom, chartWidth, gridColor, labelColor]
+  }),
+  [xZoom, tempYZoom, chartWidth, gridColor, labelColor, tempSeriesConfig]
   );
 
   const metricsOpts = useMemo(
@@ -483,8 +486,8 @@ export default function MultiProbeChart() {
         ],
       },
       select: { show: true, over: true, left: 0, top: 0, width: 0, height: 0 },
-    }),
-    [xZoom, metricsYZoom, chartWidth, gridColor, labelColor]
+  }),
+  [xZoom, metricsYZoom, chartWidth, gridColor, labelColor, metricsSeriesConfig]
   );
 
   // Refs to uPlot instances for cursor sync
