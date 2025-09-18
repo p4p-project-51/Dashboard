@@ -1,11 +1,10 @@
-import { NextRequest } from "next/server";
 import { findSessionFileById, getSessionFileContentById } from "../../helpers";
 
 export async function GET(
-  req: NextRequest,
-  { params }: { params: { sessionId: string } }
+  req: Request,
+  { params }: { params: Promise<{ sessionId: string }> }
 ) {
-  const { sessionId } = params;
+  const { sessionId } = await params;
   const content = getSessionFileContentById(sessionId);
   const fileName =
     findSessionFileById(sessionId)?.fileName ?? `session-${sessionId}.csv`;

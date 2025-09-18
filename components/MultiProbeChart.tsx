@@ -47,7 +47,7 @@ export type DynamicProbeData = Record<string, number | null> & {
   timestamp: number;
 };
 
-const adcToTempC = (X_ADC) => {
+const adcToTempC = (X_ADC: number): number => {
   const R25 = 10000; // Ω
   const B25to100 = 3590; // K
   const SERIES_OHMS = 8200; // Ω
