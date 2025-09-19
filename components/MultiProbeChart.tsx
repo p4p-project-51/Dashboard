@@ -277,7 +277,7 @@ export default function MultiProbeChart() {
     return [
       {
         label: "Time (s)",
-        value: (a: number, b: number) => formatTime(a, b, true),
+        value: (self: unknown, rawValue: number) => formatTime(self, rawValue, true),
       },
       ...tempHeaders.map((header) => {
         const hue = hashString(header) % 360;
@@ -296,7 +296,7 @@ export default function MultiProbeChart() {
     return [
       {
         label: "Time (s)",
-        value: (a: number, b: number) => formatTime(a, b, true),
+        value: (self: unknown, rawValue: number) => formatTime(self, rawValue, true),
       },
       ...metricHeaders.map((header) => {
         const hue = hashString(header) % 360;
@@ -441,6 +441,44 @@ export default function MultiProbeChart() {
           label: "Time",
           font: "14px sans-serif",
           stroke: labelColor,
+          // incr = 0.04 in my case
+          splits: (
+            plot: uPlot,
+            __: unknown,
+            scaleMin: number,
+            scaleMax: number
+          ) => {
+            // Candidate intervals in ms
+            const intervals = [
+              10 * 1000, // 10 seconds
+              30 * 1000, // 30 seconds
+              60 * 1000, // 1 minute
+              2 * 60 * 1000, // 2 minutes
+              5 * 60 * 1000, // 5 minutes
+              10 * 60 * 1000, // 10 minutes
+              30 * 60 * 1000, // 30 minutes
+              60 * 60 * 1000, // 60 minutes
+            ];
+            const maxTickCount = 45;
+            const maxTicks = Math.floor(plot.width / maxTickCount);
+            const range = scaleMax - scaleMin;
+
+            // Find largest interval that fits
+            let chosenInterval = intervals[intervals.length - 1];
+            for (let i = 0; i < intervals.length; i++) {
+              const ticks = Math.ceil(range / intervals[i]);
+              if (ticks <= maxTicks) {
+                chosenInterval = intervals[i];
+                break;
+              }
+            }
+            const startingPoint = Math.ceil(scaleMin / chosenInterval) * chosenInterval;
+            const splits = [];
+            for (let v = startingPoint; v <= scaleMax; v += chosenInterval) {
+              splits.push(v);
+            }
+            return splits;
+          },
         },
         {
           label: "Temperature (°C)",
