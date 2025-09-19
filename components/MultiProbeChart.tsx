@@ -266,10 +266,25 @@ export default function MultiProbeChart() {
 
   const gridColor = isDarkMode ? "#222" : "#ccc";
   const labelColor = isDarkMode ? "#fff" : "#222";
+  
+  const colorList = [
+    "#a6cee3",
+    "#1f78b4",
+    "#6fee00",
+    "#33a02c",
+    "#e31a1c",
+    "#6a3d9a",
+    "#c036db",
+    "#ffa600",
+    "#54D8B1",
+    "#5785C1",
+  ];
   const lineColor = useMemo(
-    () => (hue: number) =>
-      isDarkMode ? `hsl(${hue}, 55%, 60%)` : `hsl(${hue}, 65%, 60%)`,
-    [isDarkMode]
+    () => (text: string) => {
+      const hash = hashString(text);
+      return colorList[hash % colorList.length];
+    },
+    []
   );
 
   // Temperature chart config
@@ -280,10 +295,9 @@ export default function MultiProbeChart() {
         value: (self: unknown, rawValue: number) => formatTime(self, rawValue, true),
       },
       ...tempHeaders.map((header) => {
-        const hue = hashString(header) % 360;
         return {
           label: header,
-          stroke: lineColor(hue),
+          stroke: lineColor(header),
           value: (_self: unknown, v: number) =>
             v == null || isNaN(v) ? "--.--°C" : `${v.toFixed(2)}°C`,
         };
@@ -299,10 +313,10 @@ export default function MultiProbeChart() {
         value: (self: unknown, rawValue: number) => formatTime(self, rawValue, true),
       },
       ...metricHeaders.map((header) => {
-        const hue = hashString(header) % 360;
         return {
           label: header,
-          stroke: lineColor(hue),
+          stroke: lineColor(header),
+          width: 1.25,
           value: (_self: unknown, v: number) =>
             v == null || isNaN(v) ? "--.--°C" : `${v.toFixed(2)}`,
         };
