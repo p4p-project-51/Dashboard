@@ -53,10 +53,8 @@ const adcToTempC = (X_ADC: number): number => {
   const B25to100 = 3590; // K
   const SERIES_OHMS = 8200; // Ω
 
-
   // t_NTC = 1 / ( (1/298.15) + (1/B) * ln( (8200*X_ADC) / (R25*(3300 - X_ADC)) ) ) - 273.15
   const term = (SERIES_OHMS * X_ADC) / (R25 * (3300 - X_ADC));
-
 
   const invT = 1 / 298.15 + (1 / B25to100) * Math.log(term);
   const T_K = 1 / invT;
@@ -122,27 +120,30 @@ export default function MultiProbeChart() {
           rows.length > 0 &&
           header.length > 0
         ) {
-          const tempHeaders = header.filter((h) => h.startsWith("Temperature")).map((h: string) => getPinMapping(h.trim()));
-          const metricHeaders = header
-            .filter((h) => !h.startsWith("Temperature") && !h.startsWith("Time"))
+          const tempHeaders = header
+            .filter((h) => h.startsWith("Temperature"))
             .map((h: string) => getPinMapping(h.trim()));
+          const metricHeaders = header
+            .filter(
+              (h) => !h.startsWith("Temperature") && !h.startsWith("Time")
+            )
+            .map((h: string) => getPinMapping(h.trim()))
+            .filter((h) => !h.startsWith("Unmapped"));
 
-          const parsedData = rows
-            // .filter((row) => row.name != "Unmapped")
-            .map((row) => {
-              const obj: DynamicProbeData = { timestamp: Number(row[0]) };
-              console.log("Row:", row);
-              header.forEach((key, index) => {
-                if (!key.startsWith("Time")) {
-                  // obj[getPinMapping(key.trim())] =
-                    // adcToTempC(parseFloat(row[index])) || null;
-                  obj[getPinMapping(key.trim())] =
-                    calibration(key, parseFloat(row[index])) ||
-                    null;
-                }
-              });
-              return obj;
+          const parsedData = rows.map((row) => {
+            const obj: DynamicProbeData = { timestamp: Number(row[0]) };
+            header.forEach((key, index) => {
+              const mappedPin = getPinMapping(key.trim());
+              if (
+                !key.startsWith("Time") &&
+                !mappedPin.startsWith("Unmapped")
+              ) {
+                obj[mappedPin] =
+                  calibration(key, parseFloat(row[index])) || null;
+              }
             });
+            return obj;
+          });
 
           console.log("Parsed Data:", parsedData);
 
@@ -391,8 +392,8 @@ export default function MultiProbeChart() {
         ],
       },
       select: { show: true, over: true, left: 0, top: 0, width: 0, height: 0 },
-  }),
-  [xZoom, tempYZoom, chartWidth, gridColor, labelColor, tempSeriesConfig]
+    }),
+    [xZoom, tempYZoom, chartWidth, gridColor, labelColor, tempSeriesConfig]
   );
 
   const metricsOpts = useMemo(
@@ -496,8 +497,15 @@ export default function MultiProbeChart() {
         ],
       },
       select: { show: true, over: true, left: 0, top: 0, width: 0, height: 0 },
-  }),
-  [xZoom, metricsYZoom, chartWidth, gridColor, labelColor, metricsSeriesConfig]
+    }),
+    [
+      xZoom,
+      metricsYZoom,
+      chartWidth,
+      gridColor,
+      labelColor,
+      metricsSeriesConfig,
+    ]
   );
 
   // Refs to uPlot instances for cursor sync
@@ -556,16 +564,28 @@ export default function MultiProbeChart() {
           rows.length > 0 &&
           header.length > 0
         ) {
-          const tempHeaders = header.filter((h) => h.startsWith("Temperature"));
-          const metricHeaders = header.filter(
-            (h) => !h.startsWith("Temperature") && !h.startsWith("Time")
-          );
+          const tempHeaders = header
+            .filter((h) => h.startsWith("Temperature"))
+            .map((h: string) => getPinMapping(h.trim()));
+          const metricHeaders = header
+            .filter(
+              (h) =>
+                !h.startsWith("Temperature") &&
+                !h.startsWith("Time")
+            )
+            .map((h: string) => getPinMapping(h.trim()))
+            .filter(h => !h.startsWith("Unmapped"));
 
           const parsedData = rows.map((row) => {
             const obj: DynamicProbeData = { timestamp: Number(row[0]) };
             header.forEach((key, index) => {
-              if (!key.startsWith("Time")) {
-                obj[key] = adcToTempC(parseFloat(row[index])) || null;
+              const mappedPin = getPinMapping(key.trim());
+              if (
+                !key.startsWith("Time") &&
+                !mappedPin.startsWith("Unmapped")
+              ) {
+                obj[mappedPin] =
+                  calibration(key, parseFloat(row[index])) || null;
               }
             });
             return obj;
@@ -621,7 +641,9 @@ export default function MultiProbeChart() {
           const uartData: DynamicProbeData = { timestamp: msg.timestamp };
           msg.header.forEach((key: string, idx: number) => {
             uartData[key] =
-              typeof msg.values[idx] === "number" ? adcToTempC(msg.values[idx]) : null;
+              typeof msg.values[idx] === "number"
+                ? adcToTempC(msg.values[idx])
+                : null;
           });
           setData((prevData) => {
             const updatedData = [...prevData, uartData];
