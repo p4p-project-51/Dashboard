@@ -400,7 +400,7 @@ export default function MultiProbeChart() {
     () => ({
       width: chartWidth,
       height: 500,
-      title: "Pump Metrics",
+      title: "Temperature Measurements",
       scales: {
         x: {
           time: false,
@@ -798,7 +798,7 @@ export default function MultiProbeChart() {
             shadow="sm"
             p="xl"
             className={styles.chartPaper}
-            style={{ width: "100%", maxWidth: "100%" }}
+            style={{ width: "100%", maxWidth: "100%", height: "0px", display: "none" }}
           >
             <LoadingOverlay
               visible={loading}
