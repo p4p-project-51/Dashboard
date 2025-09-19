@@ -242,11 +242,21 @@ export default function MultiProbeChart() {
     });
   };
 
-  function formatTime(self: unknown, rawValue: number) {
+  function formatTime(self: unknown, rawValue: number, long: boolean = false) {
     if (rawValue === null || isNaN(rawValue)) return "--.-s";
-    // Convert ms to seconds for display
-    return `${(rawValue / 1000).toFixed(1)}s`;
+    // Convert ms to seconds
+    const seconds = rawValue / 1000;
+
+    if (seconds >= 60) {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      if (long) return `${mins}m ${secs.toFixed(1)}s`;
+      else return `${mins}m`;
+    }
+
+    return `${seconds.toFixed(1)}s`;
   }
+
   function formatValue(rawValue: number) {
     if (rawValue === null || isNaN(rawValue)) return "";
     if (rawValue >= 1e6) return `${(rawValue / 1e6).toFixed(2)}M`;
@@ -265,7 +275,10 @@ export default function MultiProbeChart() {
   // Temperature chart config
   const tempSeriesConfig = useMemo(() => {
     return [
-      { label: "Time (s)", value: formatTime },
+      {
+        label: "Time (s)",
+        value: (a: number, b: number) => formatTime(a, b, true),
+      },
       ...tempHeaders.map((header) => {
         const hue = hashString(header) % 360;
         return {
@@ -281,7 +294,10 @@ export default function MultiProbeChart() {
   // Metrics chart config
   const metricsSeriesConfig = useMemo(() => {
     return [
-      { label: "Time (s)", value: formatTime },
+      {
+        label: "Time (s)",
+        value: (a: number, b: number) => formatTime(a, b, true),
+      },
       ...metricHeaders.map((header) => {
         const hue = hashString(header) % 360;
         return {
@@ -422,11 +438,12 @@ export default function MultiProbeChart() {
           values: (self: unknown, ticks: number[]) =>
             ticks.map((t) => formatTime(self, t)),
           size: 60,
-          label: "Time (s)",
+          label: "Time",
           font: "14px sans-serif",
           stroke: labelColor,
         },
         {
+          label: "Temperature (°C)",
           grid: { show: true, stroke: gridColor },
           values: (self: unknown, ticks: number[]) =>
             ticks.map((t) => formatValue(t)),
@@ -569,12 +586,10 @@ export default function MultiProbeChart() {
             .map((h: string) => getPinMapping(h.trim()));
           const metricHeaders = header
             .filter(
-              (h) =>
-                !h.startsWith("Temperature") &&
-                !h.startsWith("Time")
+              (h) => !h.startsWith("Temperature") && !h.startsWith("Time")
             )
             .map((h: string) => getPinMapping(h.trim()))
-            .filter(h => !h.startsWith("Unmapped"));
+            .filter((h) => !h.startsWith("Unmapped"));
 
           const parsedData = rows.map((row) => {
             const obj: DynamicProbeData = { timestamp: Number(row[0]) };
@@ -798,7 +813,12 @@ export default function MultiProbeChart() {
             shadow="sm"
             p="xl"
             className={styles.chartPaper}
-            style={{ width: "100%", maxWidth: "100%", height: "0px", display: "none" }}
+            style={{
+              width: "100%",
+              maxWidth: "100%",
+              height: "0px",
+              display: "none",
+            }}
           >
             <LoadingOverlay
               visible={loading}
@@ -844,11 +864,11 @@ export default function MultiProbeChart() {
                   handleBrushChange([Number(vals[0]), Number(vals[1])]);
                 }}
                 marks={[
-                  { value: minX, label: formatTime(null, minX) },
-                  { value: maxX, label: formatTime(null, maxX) },
+                  { value: minX, label: formatTime(null, minX, true) },
+                  { value: maxX, label: formatTime(null, maxX, true) },
                 ]}
                 size="lg"
-                label={(value) => formatTime(null, value)}
+                label={(value) => formatTime(null, value, true)}
                 disabled={sessions.length === 0}
                 style={{ width: "100%", maxWidth: chartWidth }}
               />
