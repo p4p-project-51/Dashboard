@@ -25,6 +25,7 @@ import {
   Stack,
 } from "@mantine/core";
 import { useColorScheme } from "@mantine/hooks";
+import { calibration, getPinMapping } from "../app/api/probe-data/pinData";
 
 export type SessionInfo = {
   id: string; // RNG id
@@ -121,20 +122,29 @@ export default function MultiProbeChart() {
           rows.length > 0 &&
           header.length > 0
         ) {
-          const tempHeaders = header.filter((h) => h.startsWith("Temperature"));
-          const metricHeaders = header.filter(
-            (h) => !h.startsWith("Temperature") && !h.startsWith("Time")
-          );
+          const tempHeaders = header.filter((h) => h.startsWith("Temperature")).map((h: string) => getPinMapping(h.trim()));
+          const metricHeaders = header
+            .filter((h) => !h.startsWith("Temperature") && !h.startsWith("Time"))
+            .map((h: string) => getPinMapping(h.trim()));
 
-          const parsedData = rows.map((row) => {
-            const obj: DynamicProbeData = { timestamp: Number(row[0]) }; // Parse timestamp correctly
-            header.forEach((key, index) => {
-              if (!key.startsWith("Time")) {
-                obj[key] = adcToTempC(parseFloat(row[index])) || null;
-              }
+          const parsedData = rows
+            // .filter((row) => row.name != "Unmapped")
+            .map((row) => {
+              const obj: DynamicProbeData = { timestamp: Number(row[0]) };
+              console.log("Row:", row);
+              header.forEach((key, index) => {
+                if (!key.startsWith("Time")) {
+                  // obj[getPinMapping(key.trim())] =
+                    // adcToTempC(parseFloat(row[index])) || null;
+                  obj[getPinMapping(key.trim())] =
+                    calibration(key, parseFloat(row[index])) ||
+                    null;
+                }
+              });
+              return obj;
             });
-            return obj;
-          });
+
+          console.log("Parsed Data:", parsedData);
 
           setData(parsedData);
           setTempHeaders(tempHeaders);

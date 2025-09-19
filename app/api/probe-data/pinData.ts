@@ -24,89 +24,6 @@ const pinMapping = {
   "M3-C3": "Unmapped",
 };
 
-// TODO: Add calibration constants for other pins
-const calibrationConstants = {
-  // Left Resistor
-  "M2-C0": {
-    K1: 0.86306,
-    K2: 1.03037,
-    K3: 1.0947,
-  },
-  // Right Resistor
-  "M2-C1": {
-    K1: 0.818337,
-    K2: 1.14433,
-    K3: 1.31145,
-  },
-
-  // Cold Air
-  "M2-C2": {
-    K1: 0.85,
-    K2: 1,
-    K3: 1,
-  },
-  // Hot Air
-  "M2-C3": {
-    K1: 0.85,
-    K2: 1,
-    K3: 1,
-  },
-
-  // Cold Plate Inlet
-  "M3-C2": {
-    K1: 0.806586,
-    K2: 1.17916,
-    K3: 1.36308,
-  },
-  // Cold Plate Outlet
-  "M3-C1": {
-    K1: 0.891801,
-    K2: 1.00846,
-    K3: 1.05692,
-  },
-
-
-  // Pump
-  "M3-C0": {
-    K1: 0.910931,
-    K2: 1.00027,
-    K3: 1.03252,
-  },
-
-  // Radiator Inlet
-  "M1-C3": {
-    K1: 0.858399,
-    K2: 1.01705,
-    K3: 1.05479,
-  },
-  // Radiator
-  "M1-C1": {
-    K1: 0.831239,
-    K2: 1.12586,
-    K3: 1.26313,
-  },
-  // Radiator Outlet
-  "M1-C0": {
-    K1: 0.76485,
-    K2: 1.26017,
-    K3: 1.51104,
-  },
-
-  // Flow Sensor
-  "M1-C2": {
-    K1: 0.841157,
-    K2: 1.0913,
-    K3: 1.1934,
-  },
-
-  // Unmapped pins
-  "M0-C0": { K1: 1, K2: 1, K3: 1 },
-  "M0-C1": { K1: 1, K2: 1, K3: 1 },
-  "M0-C2": { K1: 1, K2: 1, K3: 1 },
-  "M0-C3": { K1: 1, K2: 1, K3: 1 },
-  "M3-C3": { K1: 1, K2: 1, K3: 1 },
-};
-
 /**
  * Map pin names to more user-friendly names
  *
@@ -116,6 +33,26 @@ const calibrationConstants = {
 export function getPinMapping(pin: string) {
   return pinMapping[pin as keyof typeof pinMapping] || pin;
 }
+
+// Linear resistor correction constants for each pin
+const linearResistorCorrectionConstants: { [key: string]: { K1: number; K2: number } } = {
+  "M2-C0": { K1: 1.07698, K2: -1.4633 },
+  "M2-C1": { K1: 1.08496, K2: -1.84465 },
+  "M2-C2": { K1: 1.34557, K2: -8.36091 },
+  "M2-C3": { K1: 1.04259, K2: -1.23235 },
+  "M3-C2": { K1: 1.07361, K2: -1.37854 },
+  "M3-C1": { K1: 1.07103, K2: -1.41727 },
+  "M3-C0": { K1: 1.11959, K2: -2.69846 },
+  "M1-C3": { K1: 1.00956, K2: 0.174502 },
+  "M1-C1": { K1: 1.12847, K2: -2.64571 },
+  "M1-C0": { K1: 1.09651, K2: -2.17814 },
+  "M1-C2": { K1: 1.12058, K2: -2.53887 },
+  "M0-C0": { K1: 1.0, K2: 0.0 },
+  "M0-C1": { K1: 1.0, K2: 0.0 },
+  "M0-C2": { K1: 1.0, K2: 0.0 },
+  "M0-C3": { K1: 1.0, K2: 0.0 },
+  "M3-C3": { K1: 1.0, K2: 0.0 },
+};
 
 /**
  * Convert ADC value to temperature in Celsius using the Steinhart-Hart equation
@@ -127,8 +64,7 @@ export function getPinMapping(pin: string) {
  */
 export function calibration(pin: string, adcValue: number) {
   // Get calibration constants for the pin
-  const { K1, K2, K3 } =
-    calibrationConstants[pin as keyof typeof calibrationConstants];
+  const steinhartHartK1 = 0.885882, steinhartHartK2 = 1.0226, steinhartHartK3 = 1.07537;
 
   // From datasheet of NTC 10k thermistor
   const R25 = 10000;
@@ -140,12 +76,14 @@ export function calibration(pin: string, adcValue: number) {
   // \frac{1}{298.15}
   const value_1 = 1 / 298.15;
   // K_{1}\frac{1}{B_{25to100}}
-  const value_2 = K1 / B_25to100;
+  const value_2 = steinhartHartK1 / B_25to100;
   // \ln\left(\frac{8200\cdot X_{ADC}}{R_{25}\cdot(K_{2}3300-K_{3}X_{ADC})}\right)
-  const value_3 = Math.log((8200 * adcValue) / (R25 * (K2 * 3300 - K3 * adcValue)));
+  const value_3 = Math.log((8200 * adcValue) / (R25 * (steinhartHartK2 * 3300 - steinhartHartK3 * adcValue)));
 
   const temperatureKelvin = 1 / (value_1 + value_2 * value_3);
   const temperatureCelsius = temperatureKelvin + ABSOLUTE_ZERO_CELSIUS;
 
-  return temperatureCelsius;
+  // Apply linear resistor correction if constants exist for the pin
+  const {K1, K2} = linearResistorCorrectionConstants[pin as keyof typeof linearResistorCorrectionConstants];
+  return K1 * temperatureCelsius + K2;
 }

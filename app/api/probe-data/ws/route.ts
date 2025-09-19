@@ -6,7 +6,6 @@ import {
   atomicWriteFileSync,
   findSessionFileById,
 } from "../helpers";
-import { getPinMapping } from "../pinData";
 
 const DATA_DIR = path.resolve(process.cwd(), "data/sessions");
 
@@ -58,8 +57,7 @@ export function SOCKET(
       const body = JSON.parse(body_str);
       console.log("Received message:", body);
 
-      let { id, header, values, timestamp } = body;
-      header = header.map((h: string) => getPinMapping(h.trim()));
+      const { id, header, values, timestamp } = body;
 
       if (!id || typeof id !== "string") {
         client.send(JSON.stringify({ error: "Missing id" }));
