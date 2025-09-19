@@ -316,7 +316,7 @@ export default function MultiProbeChart() {
         return {
           label: header,
           stroke: lineColor(header),
-          width: 1.25,
+          width: 1.3,
           value: (_self: unknown, v: number) =>
             v == null || isNaN(v) ? "--.--°C" : `${v.toFixed(2)}`,
         };
