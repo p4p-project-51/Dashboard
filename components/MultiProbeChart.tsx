@@ -145,8 +145,6 @@ export default function MultiProbeChart() {
             return obj;
           });
 
-          console.log("Parsed Data:", parsedData);
-
           setData(parsedData);
           setTempHeaders(tempHeaders);
           setMetricHeaders(metricHeaders);
@@ -707,11 +705,16 @@ export default function MultiProbeChart() {
           // Convert UART message to DynamicProbeData
           const uartData: DynamicProbeData = { timestamp: msg.timestamp };
           msg.header.forEach((key: string, idx: number) => {
-            uartData[key] =
-              typeof msg.values[idx] === "number"
-                ? adcToTempC(msg.values[idx])
-                : null;
+            const mappedPin = getPinMapping(key.trim());
+            if (
+              !key.startsWith("Time") &&
+              !mappedPin.startsWith("Unmapped")
+            ) {
+              uartData[mappedPin] =
+                calibration(key, msg.values[idx]) || null;
+            }
           });
+          
           setData((prevData) => {
             const updatedData = [...prevData, uartData];
             const timestamps = updatedData.map((d) => d.timestamp);
