@@ -6,7 +6,7 @@ import UartTerminal from "../../components/UartTerminal";
 import { WebSocketContext } from "../layout";
 import { calibration, getPinMapping } from "../api/probe-data/pinData";
 
-const MAX_POINTS = 30;
+const MAX_POINTS = 10 * (1000 / 500);
 
 export default function VitalsPage() {
   // Buffer for last 30 live values for each probe
@@ -77,6 +77,11 @@ export default function VitalsPage() {
       <Text mt="lg" size="sm" color="dimmed">
         WebSocket: {wsStatus}
       </Text>
+      {labels && labels.length > 0 && (
+        <Text size="xs" mt={2} style={{ textAlign: "right", color: "#888" }}>
+          Over the last {MAX_POINTS} readings.
+        </Text>
+      )}
       <SimpleGrid
         cols={{
           base: Math.min(labels.length, 3),
@@ -87,13 +92,34 @@ export default function VitalsPage() {
       >
         {labels.map((label) => (
           <Paper key={label} p={8}>
-            <Text size="xs">{label}</Text>
+            <Text size="sm" fw={700}>
+              {label}
+            </Text>
             <Text size="sm" mt={4} fw={700} style={{ textAlign: "right" }}>
               {liveBuffers[label] && liveBuffers[label].length > 0
                 ? liveBuffers[label][liveBuffers[label].length - 1].toFixed(2)
                 : "--"}
               °C
             </Text>
+            {/* Min, Max, Avg */}
+            {liveBuffers[label] && liveBuffers[label].length > 0 && (
+              <Text
+                size="xs"
+                mt={2}
+                style={{ textAlign: "right", color: "#888" }}
+              >
+                Min: {Math.min(...liveBuffers[label]).toFixed(2)}°C
+                <br />
+                Max: {Math.max(...liveBuffers[label]).toFixed(2)}°C
+                <br />
+                Avg:{" "}
+                {(
+                  liveBuffers[label].reduce((a, b) => a + b, 0) /
+                  liveBuffers[label].length
+                ).toFixed(2)}
+                °C
+              </Text>
+            )}
           </Paper>
         ))}
       </SimpleGrid>
