@@ -4,6 +4,7 @@ import React, { useEffect, useState, useContext } from "react";
 import { Container, Title, Text, SimpleGrid, Paper } from "@mantine/core";
 import UartTerminal from "../../components/UartTerminal";
 import { WebSocketContext } from "../layout";
+import { calibration, getPinMapping } from "../api/probe-data/pinData";
 
 const MAX_POINTS = 30;
 
@@ -27,19 +28,32 @@ export default function VitalsPage() {
     const handleError = () => setWsStatus("Error");
     const handleMessage = (event: MessageEvent) => {
       try {
-        const obj = JSON.parse(event.data);
+        let obj = JSON.parse(event.data);
+
         if (obj && Array.isArray(obj.values) && Array.isArray(obj.header)) {
-          setLabels(obj.header);
+          const newLabels: string[] = obj.header
+            .map((h: string) => getPinMapping(h.trim()))
+            .filter((h: string) => h !== "Unmapped");
+
+          setLabels(newLabels);
           setLiveBuffers((prev) => {
             const next: Record<string, number[]> = { ...prev };
-            obj.header.forEach((label: string, i: number) => {
-              const value = Number(obj.values[i]);
-              if (!isNaN(value)) {
-                next[label] = [...(next[label] || []), value].slice(
-                  -MAX_POINTS
-                );
-              }
-            });
+
+            for (let i = 0; i < obj.header.length; i++) {
+              const label = obj.header[i];
+              const mappedLabel = getPinMapping(label.trim());
+              if (mappedLabel == "Unmapped") continue;
+
+              let value = Number(obj.values[i]);
+              if (isNaN(value)) value = 0;
+
+              const calibratedValue = calibration(label.trim(), value);
+              next[mappedLabel] = [
+                ...(next[mappedLabel] || []),
+                calibratedValue,
+              ].slice(-MAX_POINTS);
+            }
+
             return next;
           });
         }
@@ -63,14 +77,15 @@ export default function VitalsPage() {
       <Text mt="lg" size="sm" color="dimmed">
         WebSocket: {wsStatus}
       </Text>
-      <SimpleGrid cols={Math.min(labels.length, 4)} spacing={8}>
+      <SimpleGrid cols={Math.min(labels.length, 3)} spacing={8}>
         {labels.map((label) => (
           <Paper key={label} p={8}>
             <Text size="xs">{label}</Text>
             <Text size="sm" mt={4} fw={700} style={{ textAlign: "right" }}>
               {liveBuffers[label] && liveBuffers[label].length > 0
-                ? liveBuffers[label][liveBuffers[label].length - 1]
+                ? liveBuffers[label][liveBuffers[label].length - 1].toFixed(2)
                 : "--"}
+              °C
             </Text>
           </Paper>
         ))}
