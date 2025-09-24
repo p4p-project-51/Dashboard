@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useEffect, useState, useContext } from "react";
-import { Container, Title, Text, SimpleGrid, Paper } from "@mantine/core";
+import { Container, Title, Text, SimpleGrid, Paper, ColorSwatch } from "@mantine/core";
 import UartTerminal from "../../components/UartTerminal";
 import { WebSocketContext } from "../layout";
-import { calibration, getPinMapping } from "../api/probe-data/pinData";
+import { calibration, getPinMapping, pinColor } from "../api/probe-data/pinData";
 
 const MAX_POINTS = 10 * (1000 / 500);
 
@@ -90,38 +90,63 @@ export default function VitalsPage() {
         }}
         spacing={8}
       >
-        {labels.map((label) => (
-          <Paper key={label} p={8}>
-            <Text size="sm" fw={700}>
-              {label}
-            </Text>
-            <Text size="sm" mt={4} fw={700} style={{ textAlign: "right" }}>
-              {liveBuffers[label] && liveBuffers[label].length > 0
-                ? liveBuffers[label][liveBuffers[label].length - 1].toFixed(2)
-                : "--"}
-              °C
-            </Text>
-            {/* Min, Max, Avg */}
-            {liveBuffers[label] && liveBuffers[label].length > 0 && (
-              <Text
-                size="xs"
-                mt={2}
-                style={{ textAlign: "right", color: "#888" }}
-              >
-                Min: {Math.min(...liveBuffers[label]).toFixed(2)}°C
-                <br />
-                Max: {Math.max(...liveBuffers[label]).toFixed(2)}°C
-                <br />
-                Avg:{" "}
-                {(
-                  liveBuffers[label].reduce((a, b) => a + b, 0) /
-                  liveBuffers[label].length
-                ).toFixed(2)}
+        {labels.map((label) => {
+          // Get the pin color and create a subtle background tint
+          const hex = pinColor(label);
+          const rgb = hex.length === 7
+            ? [
+                parseInt(hex.slice(1, 3), 16),
+                parseInt(hex.slice(3, 5), 16),
+                parseInt(hex.slice(5, 7), 16),
+              ]
+            : [200, 200, 200];
+          const backgroundColor = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.05)`;
+          const borderColor = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.3)`;
+
+          return (
+            <Paper
+              shadow="xs"
+              key={label}
+              p={8}
+              style={{
+                backgroundColor,
+                border: `2px solid ${borderColor}`,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 6, alignContent: "center", verticalAlign: "middle" }}>
+                <ColorSwatch color={hex} size="0.6em" mb="2px" />
+                <Text size="sm" fw={700}>
+                  {label}
+                </Text>
+              </div>
+              <Text size="sm" mt={4} fw={700} style={{ textAlign: "right" }}>
+                {liveBuffers[label] && liveBuffers[label].length > 0
+                  ? liveBuffers[label][liveBuffers[label].length - 1].toFixed(2)
+                  : "--"}
                 °C
               </Text>
-            )}
-          </Paper>
-        ))}
+              {/* Min, Max, Avg */}
+              {liveBuffers[label] && liveBuffers[label].length > 0 && (
+                <Text
+                  size="xs"
+                  mt={2}
+                  style={{ textAlign: "right", color: "#888" }}
+                >
+                  Min: {Math.min(...liveBuffers[label]).toFixed(2)}°C
+                  <br />
+                  Max: {Math.max(...liveBuffers[label]).toFixed(2)}°C
+                  <br />
+                  Avg:{" "}
+                  {(
+                    liveBuffers[label].reduce((a, b) => a + b, 0) /
+                    liveBuffers[label].length
+                  ).toFixed(2)}
+                  °C
+                </Text>
+              )}
+            </Paper>
+          );
+        })}
       </SimpleGrid>
       <Text mt="md">UART Terminal:</Text>
       <UartTerminal />
