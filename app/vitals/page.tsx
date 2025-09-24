@@ -77,7 +77,14 @@ export default function VitalsPage() {
       <Text mt="lg" size="sm" color="dimmed">
         WebSocket: {wsStatus}
       </Text>
-      <SimpleGrid cols={Math.min(labels.length, 3)} spacing={8}>
+      <SimpleGrid
+        cols={{
+          base: Math.min(labels.length, 3),
+          md: Math.min(labels.length, 4),
+          lg: Math.min(labels.length, 6),
+        }}
+        spacing={8}
+      >
         {labels.map((label) => (
           <Paper key={label} p={8}>
             <Text size="xs">{label}</Text>
