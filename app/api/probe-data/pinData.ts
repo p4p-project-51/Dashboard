@@ -1,3 +1,33 @@
+// Color list for probe lines
+export const colorList = [
+  "#a6cee3",
+  "#1f78b4",
+  "#6fee00",
+  "#33a02c",
+  "#e31a1c",
+  "#6a3d9a",
+  "#c036db",
+  "#ffa600",
+  "#54D8B1",
+  "#5785C1",
+];
+
+// Hash string to int
+export function hashString(str: string) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+// Get color for a probe label
+export function pinColor(text: string) {
+  const hash = hashString(text);
+  return colorList[hash % colorList.length];
+}
+
 const pinMapping = {
   "M2-C0": "L Resistor",
   "M2-C1": "R Resistor",

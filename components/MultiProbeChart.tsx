@@ -25,7 +25,7 @@ import {
   Stack,
 } from "@mantine/core";
 import { useColorScheme } from "@mantine/hooks";
-import { calibration, getPinMapping } from "../app/api/probe-data/pinData";
+import { calibration, getPinMapping, pinColor } from "../app/api/probe-data/pinData";
 
 export type SessionInfo = {
   id: string; // RNG id
@@ -264,26 +264,6 @@ export default function MultiProbeChart() {
 
   const gridColor = isDarkMode ? "#222" : "#ccc";
   const labelColor = isDarkMode ? "#fff" : "#222";
-  
-  const colorList = [
-    "#a6cee3",
-    "#1f78b4",
-    "#6fee00",
-    "#33a02c",
-    "#e31a1c",
-    "#6a3d9a",
-    "#c036db",
-    "#ffa600",
-    "#54D8B1",
-    "#5785C1",
-  ];
-  const lineColor = useMemo(
-    () => (text: string) => {
-      const hash = hashString(text);
-      return colorList[hash % colorList.length];
-    },
-    []
-  );
 
   // Temperature chart config
   const tempSeriesConfig = useMemo(() => {
@@ -295,13 +275,13 @@ export default function MultiProbeChart() {
       ...tempHeaders.map((header) => {
         return {
           label: header,
-          stroke: lineColor(header),
+          stroke: pinColor(header),
           value: (_self: unknown, v: number) =>
             v == null || isNaN(v) ? "--.--°C" : `${v.toFixed(2)}°C`,
         };
       }),
     ];
-  }, [tempHeaders, lineColor]);
+  }, [tempHeaders, pinColor]);
 
   // Metrics chart config
   const metricsSeriesConfig = useMemo(() => {
@@ -313,14 +293,14 @@ export default function MultiProbeChart() {
       ...metricHeaders.map((header) => {
         return {
           label: header,
-          stroke: lineColor(header),
+          stroke: pinColor(header),
           width: 1.3,
           value: (_self: unknown, v: number) =>
             v == null || isNaN(v) ? "--.--°C" : `${v.toFixed(2)}`,
         };
       }),
     ];
-  }, [metricHeaders, lineColor]);
+  }, [metricHeaders, pinColor]);
   const tempOpts = useMemo(
     () => ({
       width: chartWidth,
@@ -971,11 +951,4 @@ export default function MultiProbeChart() {
   );
 }
 
-function hashString(str: string) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i);
-    hash |= 0; // Convert to 32bit integer
-  }
-  return Math.abs(hash);
-}
+
