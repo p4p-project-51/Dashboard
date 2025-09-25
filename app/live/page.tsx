@@ -73,9 +73,12 @@ export default function VitalsPage() {
 
   return (
     <Container size="xxl" px="md">
-      <Title order={2}>Vitals</Title>
+      <Title ta="center" mt={100}>
+        Real-time data
+      </Title>
+
       <Text mt="lg" size="sm" color="dimmed">
-        WebSocket: {wsStatus}
+        WebSocket Status: {wsStatus}
       </Text>
       {labels && labels.length > 0 && (
         <Text size="xs" mt={2} style={{ textAlign: "right", color: "#888" }}>
@@ -90,16 +93,25 @@ export default function VitalsPage() {
         }}
         spacing={8}
       >
+        {!labels || labels.length === 0 ? (
+          <Text mt={10}>
+            No live data.
+            Connect to the Orchestrator via Bluetooth to start
+            streaming.
+          </Text>
+        ) : null}
+
         {labels.map((label) => {
           // Get the pin color and create a subtle background tint
           const hex = pinColor(label);
-          const rgb = hex.length === 7
-            ? [
-                parseInt(hex.slice(1, 3), 16),
-                parseInt(hex.slice(3, 5), 16),
-                parseInt(hex.slice(5, 7), 16),
-              ]
-            : [200, 200, 200];
+          const rgb =
+            hex.length === 7
+              ? [
+                  parseInt(hex.slice(1, 3), 16),
+                  parseInt(hex.slice(3, 5), 16),
+                  parseInt(hex.slice(5, 7), 16),
+                ]
+              : [200, 200, 200];
           const backgroundColor = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.05)`;
           const borderColor = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.3)`;
 
@@ -113,7 +125,15 @@ export default function VitalsPage() {
                 border: `2px solid ${borderColor}`,
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 6, alignContent: "center", verticalAlign: "middle" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  alignContent: "center",
+                  verticalAlign: "middle",
+                }}
+              >
                 <ColorSwatch color={hex} size="0.6em" mb="2px" />
                 <Text size="sm" fw={700}>
                   {label}
@@ -148,7 +168,11 @@ export default function VitalsPage() {
           );
         })}
       </SimpleGrid>
-      <Text mt="md">UART Terminal:</Text>
+
+      <Title ta="center" mt={100}>
+        Bluetooth Connection
+      </Title>
+
       <UartTerminal />
     </Container>
   );

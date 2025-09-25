@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useContext } from "react";
-import { Button, Textarea, Group, Text, Stack, Container } from "@mantine/core";
+import { Button, Textarea, Group, Text, Stack, Container, Flex } from "@mantine/core";
 import BluetoothTerminal from "./BluetoothTerminal";
 import { WebSocketContext } from "../app/layout";
 
@@ -17,7 +17,6 @@ export default function UartTerminal() {
   };
   const [connected, setConnected] = useState(false);
   const [terminal, setTerminal] = useState("");
-  const [deviceName, setDeviceName] = useState("Terminal");
   const terminalRef = useRef<any>(null);
   const btRef = useRef<any>(null);
   const ws = useContext(WebSocketContext); // Use shared WebSocket
@@ -46,7 +45,6 @@ export default function UartTerminal() {
       );
       await btRef.current.connect();
       setConnected(true);
-      setDeviceName(btRef.current.getDeviceName() || "Terminal");
       setTerminal((prev) =>
         trimToMaxLines(
           prev +
@@ -101,7 +99,6 @@ export default function UartTerminal() {
     if (btRef.current) {
       await btRef.current.disconnect();
       setConnected(false);
-      setDeviceName("Terminal");
     }
     backlogRef.current = [];
   };
@@ -132,21 +129,25 @@ export default function UartTerminal() {
     <Stack gap={"md"}>
       <Group gap={"md"}>
         <Button onClick={connectBluetooth} disabled={connected}>
-          Connect Bluetooth UART
+          Connect to Orchestrator
         </Button>
         <Button onClick={disconnectBluetooth} disabled={!connected} color="red">
-          Disconnect
+          Disconnect from Orchestrator
         </Button>
-        <Text>Device: {deviceName}</Text>
       </Group>
 
+      <Text size="sm" color="dimmed">
+        Bluetooth Status: {connected ? "Connected" : "Disconnected"}
+      </Text>
+
       <form onSubmit={handleSubmit}>
-        <Group gap={"md"}>
+        <Flex gap={"md"}>
           <Textarea
+            style={{ flexGrow: 1 }}
             ref={terminalRef}
             minRows={1}
             autosize
-            placeholder="Type and send..."
+            placeholder="Send message to orchestrator..."
             disabled={!connected}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
@@ -159,11 +160,8 @@ export default function UartTerminal() {
           <Button type="submit" disabled={!connected}>
             Send
           </Button>
-        </Group>
+        </Flex>
       </form>
-      <Text size="sm" color="dimmed">
-        Bluetooth: {connected ? "Connected" : "Disconnected"}
-      </Text>
 
       <Textarea
         value={terminal}
