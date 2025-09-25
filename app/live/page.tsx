@@ -169,7 +169,7 @@ export default function VitalsPage() {
         })}
       </SimpleGrid>
 
-      <Title ta="center" mt={100}>
+      <Title ta="center" mt={64}>
         Bluetooth Connection
       </Title>
 

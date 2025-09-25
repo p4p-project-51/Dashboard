@@ -1,11 +1,10 @@
 import { Anchor, Text, Title } from "@mantine/core";
-import classes from "./Welcome.module.css";
 import Link from "next/link";
 
 export function Welcome() {
   return (
     <>
-      <Title className={classes.title} ta="center" mt={100}>
+      <Title ta="center">
         Project #51
       </Title>
 

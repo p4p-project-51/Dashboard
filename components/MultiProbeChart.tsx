@@ -740,7 +740,9 @@ export default function MultiProbeChart() {
       <Container
         size="md"
         px={0}
-        style={{ marginBottom: 16, width: "100%", maxWidth: "100%" }}
+        mt={64}
+        mb={32}
+        style={{ width: "100%", maxWidth: "100%" }}
       >
         <Group justify="center" align="end">
           <Select
@@ -843,7 +845,7 @@ export default function MultiProbeChart() {
           </div>
         </Paper>
       ) : (
-        <Stack>
+        <Stack mb={32}>
           <Paper
             shadow="sm"
             p="xl"
