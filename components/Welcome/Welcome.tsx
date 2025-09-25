@@ -18,6 +18,7 @@ export function Welcome() {
         href="https://part4project.foe.auckland.ac.nz/home/project/detail/5592/"
         target="_blank"
         rel="noopener noreferrer"
+        style={{ wordWrap: "break-word" }}
       >
         <Text c="blue" ta="center" size="lg" mt="sm">
           https://part4project.foe.auckland.ac.nz/home/project/detail/5592/
