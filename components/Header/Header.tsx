@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Burger, Container, Group, Button, Title } from "@mantine/core";
+import { Burger, Container, Group, Button, Title, Drawer, Stack } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { MantineLogo } from "@mantinex/mantine-logo";
 import Link from "next/link";
@@ -53,6 +53,28 @@ export function Header() {
           <ColorSchemeToggle />
         </Group>
         <Burger opened={opened} onClick={toggle} hiddenFrom="xs" size="sm" />
+        {/* Drawer for mobile menu */}
+        <Drawer
+          opened={opened}
+          onClose={toggle}
+          padding="md"
+          size="xs"
+          hiddenFrom="xs"
+          title={
+            <Title order={2} m={0}>
+              Menu
+            </Title>
+          }
+        >
+          <Stack
+            gap={8}
+          >
+            {items}
+            <div style={{ display: "flex", justifyContent: "center", marginTop: "auto" }}>
+              <ColorSchemeToggle />
+            </div>
+          </Stack>
+        </Drawer>
       </Container>
     </header>
   );
