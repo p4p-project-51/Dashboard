@@ -7,11 +7,11 @@ import { MantineLogo } from "@mantinex/mantine-logo";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import classes from "./Header.module.css";
+import { ColorSchemeToggle } from "../ColorSchemeToggle/ColorSchemeToggle";
 
 const links = [
-  { link: "/", label: "About" },
-  { link: "/vitals", label: "Vitals" },
-  { link: "/history", label: "History" },
+  { link: "/", label: "Home" },
+  { link: "/live", label: "Real-time Connection" },
 ];
 
 export function Header() {
@@ -50,6 +50,7 @@ export function Header() {
         </Link>
         <Group gap={5} visibleFrom="xs">
           {items}
+          <ColorSchemeToggle />
         </Group>
         <Burger opened={opened} onClick={toggle} hiddenFrom="xs" size="sm" />
       </Container>
