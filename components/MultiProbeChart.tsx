@@ -12,6 +12,8 @@ import {
   IconReload,
   IconStar,
   IconStarFilled,
+  IconRocket,
+  IconRocketOff,
 } from "@tabler/icons-react";
 import {
   Select,
@@ -93,6 +95,7 @@ export default function MultiProbeChart() {
   const [starredSessions, setStarredSessions] = useState<string[]>([]);
   const [starLoading, setStarLoading] = useState(false);
   const [metricHeaders, setMetricHeaders] = useState<string[]>([]);
+  const [performanceMode, setPerformanceMode] = useState(false);
 
   const ws = useContext(WebSocketContext);
 
@@ -253,6 +256,7 @@ export default function MultiProbeChart() {
           label: header,
           stroke: pinColor(header),
           width: 1.3,
+          pxAlign: 0,
           value: (_self: unknown, v: number) =>
             v == null || isNaN(v) ? "--.--°C" : `${v.toFixed(2)}`,
         };
@@ -339,7 +343,10 @@ export default function MultiProbeChart() {
         },
       ],
       legend: { show: true },
-      cursor: { drag: { x: true, y: true, uni: 50 }, focus: { prox: 16 } },
+      cursor: { 
+        drag: { x: true, y: true, uni: 50 }, 
+        focus: performanceMode ? { prox: 0 } : { prox: 16 }
+      },
       hooks: {
         setSelect: [
           function (u: unknown) {
@@ -392,6 +399,7 @@ export default function MultiProbeChart() {
       gridColor,
       labelColor,
       metricsSeriesConfig,
+      performanceMode,
     ]
   );
 
@@ -730,6 +738,17 @@ export default function MultiProbeChart() {
                 disabled={sessions.length === 0}
               >
                 Reset Zoom
+              </Button>
+              <Button
+                variant={performanceMode ? "light" : "default"}
+                leftSection={
+                  performanceMode ? <IconRocket /> : <IconRocketOff />
+                }
+                onClick={() => setPerformanceMode(!performanceMode)}
+                size="sm"
+                style={{ fontWeight: 600, fontSize: 12 }}
+              >
+                Performance Mode: {performanceMode ? "On" : "Off"}
               </Button>
             </div>
           </Paper>
