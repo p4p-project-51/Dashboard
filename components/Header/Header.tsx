@@ -8,6 +8,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import classes from "./Header.module.css";
 import { ColorSchemeToggle } from "../ColorSchemeToggle/ColorSchemeToggle";
+import { AuthButton } from "../AuthButton/AuthButton";
 
 const links = [
   { link: "/", label: "Home" },
@@ -50,6 +51,7 @@ export function Header() {
         </Link>
         <Group gap={5} visibleFrom="xs">
           {items}
+          <AuthButton />
           <ColorSchemeToggle />
         </Group>
         <Burger opened={opened} onClick={toggle} hiddenFrom="xs" size="sm" />
@@ -70,7 +72,8 @@ export function Header() {
             gap={8}
           >
             {items}
-            <div style={{ display: "flex", justifyContent: "center", marginTop: "auto" }}>
+            <div style={{ display: "flex", justifyContent: "center", gap: "8px", marginTop: "auto" }}>
+              <AuthButton />
               <ColorSchemeToggle />
             </div>
           </Stack>

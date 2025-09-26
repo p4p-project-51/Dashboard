@@ -23,20 +23,26 @@ export default function RootLayout({ children }: { children: any }) {
 
   const openWebSocket = React.useCallback(() => {
     if (wsRef.current) return;
-    const socket = new WebSocket(
-      `${
-        typeof window !== "undefined" && window.location.protocol === "https:"
-          ? "wss"
-          : "ws"
-      }://${
-        typeof window !== "undefined" ? window.location.host : ""
-      }/api/probe-data/ws`
-    );
+    
+    const protocol = typeof window !== "undefined" && window.location.protocol === "https:" ? "wss" : "ws";
+    const host = typeof window !== "undefined" ? window.location.host : "";
+
+    const currentAuthKey = typeof window !== "undefined" ? localStorage.getItem("upload-auth-key") : null;
+    const wsUrl = currentAuthKey 
+      ? `${protocol}://${host}/api/probe-data/ws?auth=${encodeURIComponent(currentAuthKey)}`
+      : `${protocol}://${host}/api/probe-data/ws`;
+      console.log("Connecting to WebSocket URL:", wsUrl);
+      console.log("Using auth key:", currentAuthKey);
+    
+    const socket = new WebSocket(wsUrl);
     setWs(socket);
     wsRef.current = socket;
     socket.onopen = () => {
       reconnectIntervalMs.current = 250;
     };
+    socket.onmessage = (event) => {
+      console.log("WebSocket message:", event.data);
+    }
     socket.onclose = () => {
       setWs(null);
       wsRef.current = null;

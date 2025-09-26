@@ -50,12 +50,25 @@ export function SOCKET(
   console.log("A client connected");
 
   client.on("message", (message) => {
-    console.log("Received message:", message);
-
     try {
+      // Check authentication
+      const expectedKey = process.env.UPLOAD_KEY;
+      const url = new URL(request.url || '', `http://${request.headers.host}`);
+      const authKey = url.searchParams.get('auth');
+      
+      if (!expectedKey) {
+        client.send(JSON.stringify({ error: "Server configuration error: UPLOAD_KEY not set" }));
+        return;
+      }
+      
+      if (!authKey || authKey !== expectedKey) {
+        client.send(JSON.stringify({ error: "Unauthorized: Invalid or missing upload key for data upload" }));
+        return;
+      }
+
       const body_str = message.toString();
       const body = JSON.parse(body_str);
-      console.log("Received message:", body);
+      console.log("Received message:", body_str);
 
       const { id, header, values, timestamp } = body;
 
