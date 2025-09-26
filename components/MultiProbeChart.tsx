@@ -92,7 +92,6 @@ export default function MultiProbeChart() {
   const [loading, setLoading] = useState(true);
   const [starredSessions, setStarredSessions] = useState<string[]>([]);
   const [starLoading, setStarLoading] = useState(false);
-  const [tempHeaders, setTempHeaders] = useState<string[]>([]);
   const [metricHeaders, setMetricHeaders] = useState<string[]>([]);
 
   const ws = useContext(WebSocketContext);
@@ -120,9 +119,6 @@ export default function MultiProbeChart() {
           rows.length > 0 &&
           header.length > 0
         ) {
-          const tempHeaders = header
-            .filter((h) => h.startsWith("Temperature"))
-            .map((h: string) => getPinMapping(h.trim()));
           const metricHeaders = header
             .filter(
               (h) => !h.startsWith("Temperature") && !h.startsWith("Time")
@@ -146,7 +142,6 @@ export default function MultiProbeChart() {
           });
 
           setData(parsedData);
-          setTempHeaders(tempHeaders);
           setMetricHeaders(metricHeaders);
 
           // Initialize zoom state
@@ -157,22 +152,18 @@ export default function MultiProbeChart() {
           setBrush([minX, maxX]);
         } else {
           setData([]);
-          setTempHeaders([]);
           setMetricHeaders([]);
           setXZoom(null);
           setBrush(null);
         }
-        setTempYZoom(null);
         setMetricsYZoom(null);
         setLoading(false);
       })
       .catch(() => {
         setData([]);
-        setTempHeaders([]);
         setMetricHeaders([]);
         setXZoom(null);
         setBrush(null);
-        setTempYZoom(null);
         setMetricsYZoom(null);
         setLoading(false);
       });
@@ -188,25 +179,11 @@ export default function MultiProbeChart() {
   // Prepare chart data
   const x = useMemo(() => data.map((d) => d.timestamp), [data]);
 
-  const tempSeries = useMemo(() => {
-    return tempHeaders.map((header) =>
-      data.map((d) => (d[header] as number) ?? NaN)
-    );
-  }, [data, tempHeaders]);
-
   const metricSeries = useMemo(() => {
     return metricHeaders.map((header) =>
       data.map((d) => (d[header] as number) ?? NaN)
     );
   }, [data, metricHeaders]);
-
-  const tempChartData = useMemo(
-    () => [
-      Float64Array.from(x),
-      ...tempSeries.map((arr) => Float64Array.from(arr)),
-    ],
-    [x, tempSeries]
-  );
 
   const metricsChartData = useMemo(
     () => [
@@ -219,7 +196,6 @@ export default function MultiProbeChart() {
   // Shared zoom state for both charts (xMin, xMax)
   const [xZoom, setXZoom] = useState<[number, number] | null>(null);
   // Individual y-axis zoom for each chart
-  const [tempYZoom, setTempYZoom] = useState<[number, number] | null>(null);
   const [metricsYZoom, setMetricsYZoom] = useState<[number, number] | null>(
     null
   );
@@ -265,24 +241,6 @@ export default function MultiProbeChart() {
   const gridColor = isDarkMode ? "#222" : "#ccc";
   const labelColor = isDarkMode ? "#fff" : "#222";
 
-  // Temperature chart config
-  const tempSeriesConfig = useMemo(() => {
-    return [
-      {
-        label: "Time (s)",
-        value: (self: unknown, rawValue: number) => formatTime(self, rawValue, true),
-      },
-      ...tempHeaders.map((header) => {
-        return {
-          label: header,
-          stroke: pinColor(header),
-          value: (_self: unknown, v: number) =>
-            v == null || isNaN(v) ? "--.--°C" : `${v.toFixed(2)}°C`,
-        };
-      }),
-    ];
-  }, [tempHeaders, pinColor]);
-
   // Metrics chart config
   const metricsSeriesConfig = useMemo(() => {
     return [
@@ -300,109 +258,7 @@ export default function MultiProbeChart() {
         };
       }),
     ];
-  }, [metricHeaders, pinColor]);
-  const tempOpts = useMemo(
-    () => ({
-      width: chartWidth,
-      height: 500,
-      title: "Temperature Probes",
-      scales: {
-        x: {
-          time: false,
-          range: xZoom
-            ? () => [xZoom[0], xZoom[1]] as [number, number]
-            : undefined,
-        },
-        y: {
-          auto: !tempYZoom,
-          range: tempYZoom
-            ? () => [tempYZoom[0], tempYZoom[1]] as [number, number]
-            : undefined,
-        },
-      },
-      series: tempSeriesConfig,
-      axes: [
-        {
-          grid: { show: true, stroke: gridColor },
-          values: (self: unknown, ticks: number[]) =>
-            ticks.map((t) => formatTime(self, t)),
-          size: 60,
-          label: "Time (s)",
-          font: "14px sans-serif",
-          stroke: labelColor,
-        },
-        {
-          grid: { show: true, stroke: gridColor },
-          values: (self: unknown, ticks: number[]) =>
-            ticks.map((t) => formatValue(t)),
-          size: 60,
-          font: "14px sans-serif",
-          stroke: labelColor,
-        },
-      ],
-      legend: { show: true },
-      cursor: { drag: { x: true, y: true, uni: 50 }, focus: { prox: 16 } },
-      hooks: {
-        setSelect: [
-          function (u: unknown) {
-            const uu = u as {
-              select: {
-                width: number;
-                left: number;
-                height: number;
-                top: number;
-              };
-              posToVal: (px: number, scale: string) => number;
-            };
-            // Only sync horizontal zoom
-            if (uu.select.width > 0) {
-              const minX = uu.posToVal(uu.select.left, "x");
-              const maxX = uu.posToVal(uu.select.left + uu.select.width, "x");
-              setXZoom([minX, maxX]);
-            } else if (!uu.select.width) {
-              setXZoom(null);
-            }
-            // Only apply vertical zoom to this chart
-            if (uu.select.height > 0) {
-              const minY = uu.posToVal(uu.select.top + uu.select.height, "y");
-              const maxY = uu.posToVal(uu.select.top, "y");
-              setTempYZoom([minY, maxY]);
-            } else if (!uu.select.height) {
-              setTempYZoom(null);
-            }
-          },
-        ],
-        setCursor: [
-          function (u: any) {
-            if (
-              metricsPlotRef.current &&
-              u.cursor.left != null &&
-              u.cursor.top != null
-            ) {
-              metricsPlotRef.current.setCursor({
-                left: u.cursor.left,
-                top: u.cursor.top,
-              });
-            }
-          },
-        ],
-        init: [
-          function (u: unknown) {
-            const uPlotInstance = u as { over: HTMLElement };
-            if (uPlotInstance && uPlotInstance.over) {
-              uPlotInstance.over.addEventListener("dblclick", () => {
-                setXZoom(null);
-                setTempYZoom(null);
-                setMetricsYZoom(null);
-              });
-            }
-          },
-        ],
-      },
-      select: { show: true, over: true, left: 0, top: 0, width: 0, height: 0 },
-    }),
-    [xZoom, tempYZoom, chartWidth, gridColor, labelColor, tempSeriesConfig]
-  );
+  }, [metricHeaders]);
 
   const metricsOpts = useMemo(
     () => ({
@@ -514,23 +370,7 @@ export default function MultiProbeChart() {
             }
           },
         ],
-        setCursor: [
-          function (u: any) {
-            if (isSyncingCursor.current) return;
-            if (
-              tempPlotRef.current &&
-              u.cursor.left != null &&
-              u.cursor.top != null
-            ) {
-              isSyncingCursor.current = true;
-              tempPlotRef.current.setCursor({
-                left: u.cursor.left,
-                top: u.cursor.top,
-              });
-              isSyncingCursor.current = false;
-            }
-          },
-        ],
+        setCursor: [],
         init: [
           function (u: unknown) {
             const uPlotInstance = u as { over: HTMLElement };
@@ -556,9 +396,7 @@ export default function MultiProbeChart() {
   );
 
   // Refs to uPlot instances for cursor sync
-  const tempPlotRef = useRef<any>(null);
   const metricsPlotRef = useRef<any>(null);
-  const isSyncingCursor = useRef(false);
 
   // Track if user is actively selecting (mouse down)
   const isSelecting = useRef(false);
@@ -611,9 +449,6 @@ export default function MultiProbeChart() {
           rows.length > 0 &&
           header.length > 0
         ) {
-          const tempHeaders = header
-            .filter((h) => h.startsWith("Temperature"))
-            .map((h: string) => getPinMapping(h.trim()));
           const metricHeaders = header
             .filter(
               (h) => !h.startsWith("Temperature") && !h.startsWith("Time")
@@ -637,7 +472,6 @@ export default function MultiProbeChart() {
           });
 
           setData(parsedData);
-          setTempHeaders(tempHeaders);
           setMetricHeaders(metricHeaders);
 
           // Initialize zoom state
@@ -648,22 +482,18 @@ export default function MultiProbeChart() {
           setBrush([minX, maxX]);
         } else {
           setData([]);
-          setTempHeaders([]);
           setMetricHeaders([]);
           setXZoom(null);
           setBrush(null);
         }
-        setTempYZoom(null);
         setMetricsYZoom(null);
         setLoading(false);
       })
       .catch(() => {
         setData([]);
-        setTempHeaders([]);
         setMetricHeaders([]);
         setXZoom(null);
         setBrush(null);
-        setTempYZoom(null);
         setMetricsYZoom(null);
         setLoading(false);
       });
@@ -847,30 +677,6 @@ export default function MultiProbeChart() {
       ) : (
         <Stack mb={32}>
           <Paper
-            shadow="sm"
-            p="xl"
-            className={styles.chartPaper}
-            style={{
-              width: "100%",
-              maxWidth: "100%",
-              height: "0px",
-              display: "none",
-            }}
-          >
-            <LoadingOverlay
-              visible={loading}
-              zIndex={1000}
-              overlayProps={{ radius: "sm", blur: 2 }}
-            />
-            <UplotReact
-              options={tempOpts}
-              data={tempChartData}
-              onCreate={(chart) => {
-                tempPlotRef.current = chart;
-              }}
-            />
-          </Paper>
-          <Paper
             mb={24}
             w="100%"
             radius={8}
@@ -917,7 +723,6 @@ export default function MultiProbeChart() {
                 leftSection={<IconZoom />}
                 onClick={() => {
                   setXZoom(null);
-                  setTempYZoom(null);
                   setMetricsYZoom(null);
                 }}
                 aria-label="Reset Zoom"
