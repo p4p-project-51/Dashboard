@@ -810,3 +810,13 @@
 .mantine-ChartTooltip-tooltip {
   border: 1px solid var(--mantine-color-default-border);
 }
+
+/* Prevent horizontal overflow */
+html, body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+* {
+  box-sizing: border-box;
+}

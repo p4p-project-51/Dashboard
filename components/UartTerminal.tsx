@@ -182,7 +182,7 @@ export default function UartTerminal() {
             color: "#eee",
             width: "100%",
             minWidth: "600px",
-            maxWidth: "100vw",
+            maxWidth: "100%",
           },
           root: {
             width: "100%",

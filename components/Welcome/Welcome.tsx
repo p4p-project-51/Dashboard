@@ -19,11 +19,11 @@ export function Welcome() {
           target="_blank"
           rel="noopener noreferrer"
           style={{
-            wordWrap: "break-word",
-            display: "inline-block"
+            display: "inline-block",
+            maxWidth: "100%"
           }}
         >
-          <Text c="blue" size="lg" component="span">
+          <Text c="blue" size="lg" component="span" style={{ wordBreak: "break-all" }}>
             https://part4project.foe.auckland.ac.nz/home/project/detail/5592/
           </Text>
         </Link>
