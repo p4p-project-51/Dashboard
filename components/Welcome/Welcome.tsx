@@ -13,16 +13,21 @@ export function Welcome() {
         system
       </Text>
 
-      <Link
-        href="https://part4project.foe.auckland.ac.nz/home/project/detail/5592/"
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{ wordWrap: "break-word" }}
-      >
-        <Text c="blue" ta="center" size="lg" mt="sm">
-          https://part4project.foe.auckland.ac.nz/home/project/detail/5592/
-        </Text>
-      </Link>
+      <div style={{ display: "flex", justifyContent: "center", marginTop: "1rem" }}>
+        <Link
+          href="https://part4project.foe.auckland.ac.nz/home/project/detail/5592/"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ 
+            wordWrap: "break-word",
+            display: "inline-block"
+          }}
+        >
+          <Text c="blue" size="lg" component="span">
+            https://part4project.foe.auckland.ac.nz/home/project/detail/5592/
+          </Text>
+        </Link>
+      </div>
     </>
   );
 }
