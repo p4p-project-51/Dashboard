@@ -1,0 +1,12 @@
+services:
+  p4p-interface:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '5125:3000'
+    volumes:
+      - ./data:/app/data
+    environment:
+      - .env
+    restart: always
