@@ -9,8 +9,7 @@ RUN corepack enable
 COPY . /app
 WORKDIR /app
 
-# Copy package files and install all dependencies
-COPY package.json package-lock.json /app/
+# Install all dependencies
 RUN pnpm install
 
 # Copy the application code and build the application
