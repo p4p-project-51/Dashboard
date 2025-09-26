@@ -62,17 +62,18 @@ export function Header() {
           padding="md"
           size="xs"
           hiddenFrom="xs"
-          title={
-            <Title order={2} m={0}>
-              Menu
-            </Title>
-          }
+          title={"Navigation"}
         >
-          <Stack
-            gap={8}
-          >
+          <Stack gap={8}>
             {items}
-            <div style={{ display: "flex", justifyContent: "center", gap: "8px", marginTop: "auto" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                gap: "8px",
+                marginTop: "auto",
+              }}
+            >
               <AuthButton />
               <ColorSchemeToggle />
             </div>
