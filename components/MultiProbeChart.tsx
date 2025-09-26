@@ -25,6 +25,7 @@ import {
   Container,
   useMantineColorScheme,
   Stack,
+  Text,
 } from "@mantine/core";
 import { useColorScheme } from "@mantine/hooks";
 import { calibration, getPinMapping, pinColor } from "../app/api/probe-data/pinData";
@@ -751,6 +752,13 @@ export default function MultiProbeChart() {
                 Performance Mode: {performanceMode ? "On" : "Off"}
               </Button>
             </div>
+            <Text
+              mt={8}
+              size="xs"
+              style={{ display: "flex", alignItems: "center", color: "#888" }}
+            >
+              {data.length} data points
+            </Text>
           </Paper>
           <Paper
             shadow="sm"
