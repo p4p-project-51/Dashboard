@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useRef, useContext } from "react";
-import { Button, Textarea, Group, Text, Stack, Container, Flex } from "@mantine/core";
+import React, { useState, useRef, useContext, useEffect } from "react";
+import { Button, Textarea, Group, Text, Stack, Flex } from "@mantine/core";
 import BluetoothTerminal from "./BluetoothTerminal";
 import { WebSocketContext } from "../app/layout";
 
@@ -25,6 +25,16 @@ export default function UartTerminal() {
   // UUIDs as numbers for Web Bluetooth compatibility with ESP32
   const SERVICE_UUID = 0xffe0;
   const CHARACTERISTIC_UUID = 0xffe1;
+
+  // Send backlog when WebSocket opens
+  useEffect(() => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      // Send any backlogged messages
+      while (backlogRef.current.length > 0) {
+        ws.send(backlogRef.current.shift()!);
+      }
+    }
+  }, [ws]);
 
   // Connect to Bluetooth UART
   const connectBluetooth = async () => {
