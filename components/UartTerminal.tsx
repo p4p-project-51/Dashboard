@@ -127,6 +127,9 @@ export default function UartTerminal() {
 
   return (
     <Stack gap={"md"}>
+      <Text size="sm" color="dimmed">
+        Bluetooth Status: {connected ? "Connected" : "Disconnected"}
+      </Text>
       <Group gap={"md"}>
         <Button onClick={connectBluetooth} disabled={connected}>
           Connect to Orchestrator
@@ -136,11 +139,7 @@ export default function UartTerminal() {
         </Button>
       </Group>
 
-      <Text size="sm" color="dimmed">
-        Bluetooth Status: {connected ? "Connected" : "Disconnected"}
-      </Text>
-
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} style={{marginTop: '16px'}}>
         <Flex gap={"md"}>
           <Textarea
             style={{ flexGrow: 1 }}
