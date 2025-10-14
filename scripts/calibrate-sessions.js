@@ -24,6 +24,37 @@ const linearResistorCorrectionConstants = {
   "M3-C3": { K1: 1.0, K2: 0.0 },
 };
 
+// Pin name mapping (kept in sync with app/api/probe-data/pinData.ts)
+const pinMapping = {
+  "M2-C0": "L Resistor",
+  "M2-C1": "R Resistor",
+
+  "M2-C2": "Cold Air",
+  "M2-C3": "Hot Air",
+
+  "M3-C2": "Cold Inlet",
+  "M3-C1": "Cold Outlet",
+
+  "M3-C0": "Pump",
+
+  "M1-C3": "Radiator Inlet",
+  "M1-C1": "Radiator",
+  "M1-C0": "Radiator Outlet",
+
+  "M1-C2": "Flow Sensor",
+
+  // Unmapped pins
+  "M0-C0": "Unmapped",
+  "M0-C1": "Unmapped",
+  "M0-C2": "Unmapped",
+  "M0-C3": "Unmapped",
+  "M3-C3": "Unmapped",
+};
+
+function getPinMapping(pin) {
+  return pinMapping[pin] || pin;
+}
+
 /**
  * Convert ADC value to temperature in Celsius using the Steinhart-Hart equation
  * 
@@ -91,8 +122,10 @@ function processCSVFile(inputPath, outputPath) {
     const header = parseCSVLine(lines[0]);
     const pinNames = header.slice(1); // Skip 'Timestamp' column
     
-    // Process data rows
-    const outputLines = [lines[0]]; // Keep original header
+  // Process data rows
+  // Use mapped header names for output (Timestamp + friendly pin names)
+  const mappedHeader = [header[0], ...pinNames.map(getPinMapping)];
+  const outputLines = [mappedHeader.join(',')];
     
     for (let i = 1; i < lines.length; i++) {
       const values = parseCSVLine(lines[i]);
