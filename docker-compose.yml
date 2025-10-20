@@ -9,5 +9,4 @@ services:
       - ./data:/app/data
     environment:
       - .env
-    user: "${UID:-1000}:${GID:-1000}"
     restart: always
