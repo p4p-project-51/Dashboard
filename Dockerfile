@@ -32,6 +32,9 @@ COPY --from=builder /app/public /app/public
 COPY --from=builder /app/.next/standalone /app/
 COPY --from=builder /app/.next/static /app/.next/static
 
+# Create data directory and set ownership
+RUN mkdir -p /app/data/sessions && chown -R node:node /app/data
+
 # Switch to a non-root user
 USER node
 
